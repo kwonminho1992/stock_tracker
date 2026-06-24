@@ -1,0 +1,105 @@
+"""중앙 설정 파일.
+
+추적 자산 목록, 이동평균 윈도우, 이격도 구간 기준을 한 곳에서 관리한다.
+새 종목을 추가하려면 ASSETS 리스트에 dict 한 줄만 추가하면 된다.
+"""
+from __future__ import annotations
+
+from typing import Dict, List
+
+# ---------------------------------------------------------------------------
+# 이동평균 / 이격도 설정
+# ---------------------------------------------------------------------------
+
+# 계산할 이동평균 기간(일). disparity{w} 가 각 윈도우마다 생성된다.
+MA_WINDOWS: List[int] = [20, 50, 120]
+
+# 메인 판단 지표로 사용할 이격도 윈도우.
+PRIMARY_WINDOW: int = 50
+
+# ---------------------------------------------------------------------------
+# 이격도 구간(zone) 기준 — 모두 disparity50 기준
+#   overheat  : disparity50 >= 130            과열
+#   caution   : 120 <= disparity50 < 130      경계
+#   normal    : 105 <  disparity50 < 120      정상
+#   cooldown  : disparity50 <= 105            과열해소
+# 경계값을 바꾸고 싶으면 아래 숫자만 수정하면 된다.
+# ---------------------------------------------------------------------------
+
+ZONE_OVERHEAT_MIN: float = 130.0   # 이 값 이상이면 과열
+ZONE_CAUTION_MIN: float = 120.0    # (과열이 아니고) 이 값 이상이면 경계
+ZONE_NORMAL_MIN: float = 105.0     # (경계가 아니고) 이 값 '초과'면 정상, '이하'면 과열해소
+
+ZONE_LABELS: Dict[str, str] = {
+    "overheat": "과열",
+    "caution": "경계",
+    "normal": "정상",
+    "cooldown": "과열해소",
+}
+
+# ---------------------------------------------------------------------------
+# 데이터 검증 기준
+# ---------------------------------------------------------------------------
+
+# disparity50 이 이 범위를 벗어나면 "값 확인 필요(suspicious)" 플래그를 단다.
+SUSPICIOUS_DISPARITY_MIN: float = 50.0
+SUSPICIOUS_DISPARITY_MAX: float = 200.0
+
+# 마지막 데이터가 today 기준 이 일수 이상 지났으면 "데이터 오래됨(stale)" 으로 본다.
+# 정확한 휴장일 캘린더는 2차 기능. 주말 + 단기 연휴를 감안해 7일로 둔다.
+STALE_DAYS: int = 7
+
+# ---------------------------------------------------------------------------
+# 데이터 수집 범위
+# ---------------------------------------------------------------------------
+
+# 국내(pykrx) 조회 시작일을 정하는 lookback (달력일 기준).
+# 약 2년치를 받아서 ma120 워밍업 + 최근 1년 히스토리를 모두 커버한다.
+KR_LOOKBACK_DAYS: int = 730
+
+# 해외(yfinance) 조회 기간. yfinance period 문자열.
+US_PERIOD: str = "2y"
+
+# 히스토리(차트)로 내보낼 최근 기간(달력일). 약 1년.
+HISTORY_DAYS: int = 365
+
+# ---------------------------------------------------------------------------
+# 추적 자산 목록
+#   name       : 화면에 표시할 이름
+#   code       : 식별 코드 (pykrx 티커 / yfinance 심볼)
+#   market     : "KR" | "US"
+#   asset_type : "kr_index" | "kr_stock" | "us_index" | "us_stock"
+#   source     : "pykrx_index" | "pykrx_stock" | "yfinance"  (종가 모드에서 사용)
+#   yf_ticker  : 장중(intraday) 모드에서 쓰는 yfinance 심볼
+#                (국내 종목=<코드>.KS, 코스피=^KS11, 코스닥=^KQ11, 해외=code 그대로)
+#   enabled    : False 이면 수집에서 제외 (코드 미확정 종목 등)
+# ---------------------------------------------------------------------------
+
+ASSETS: List[Dict] = [
+    # ----- 국내 지수 (종가=pykrx / 장중=yfinance) -----
+    {"name": "코스피",     "code": "1001", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KS11",  "enabled": True},
+    # ^KS200(코스피200) 야후 심볼은 미확정. 장중 모드에서 실패하면 이 자산만 error 로 뜨고 전체엔 영향 없음.
+    {"name": "코스피200",  "code": "1028", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KS200", "enabled": True},
+    # 코스닥 종합지수. pykrx 코드 "2001", yfinance ^KQ11. 값이 비정상이면 확인(코스닥150=pykrx "2203").
+    {"name": "코스닥",     "code": "2001", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KQ11",  "enabled": True},
+
+    # ----- 국내 개별종목 (종가=pykrx / 장중=yfinance, 티커=<코드>.KS) -----
+    {"name": "SK하이닉스", "code": "000660", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "000660.KS", "enabled": True},
+    {"name": "삼성전자",   "code": "005930", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "005930.KS", "enabled": True},
+    {"name": "삼성전기",   "code": "009150", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "009150.KS", "enabled": True},
+    {"name": "LG이노텍",   "code": "011070", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "011070.KS", "enabled": True},
+    # TODO: SOL AI반도체TOP2 PLUS ETF 종목코드를 확인해 code 와 yf_ticker(예: "473490.KS")를 채우고 enabled=True 로 변경.
+    {"name": "SOL AI반도체TOP2 PLUS", "code": "TODO_FILL_ME", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "TODO_FILL_ME", "enabled": False},
+
+    # ----- 해외 지수/종목 (종가·장중 모두 yfinance, yf_ticker = code) -----
+    {"name": "S&P500",   "code": "^GSPC", "market": "US", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^GSPC", "enabled": True},
+    {"name": "나스닥100", "code": "^NDX",  "market": "US", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^NDX",  "enabled": True},
+    {"name": "마이크론",  "code": "MU",    "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "MU",    "enabled": True},
+    {"name": "엔비디아",  "code": "NVDA",  "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "NVDA",  "enabled": True},
+    {"name": "브로드컴",  "code": "AVGO",  "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "AVGO",  "enabled": True},
+]
+
+
+def enabled_assets() -> List[Dict]:
+    """enabled=True 인 자산만 반환."""
+    return [a for a in ASSETS if a.get("enabled", True)]

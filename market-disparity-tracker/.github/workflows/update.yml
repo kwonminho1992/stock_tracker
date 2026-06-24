@@ -1,0 +1,77 @@
+name: update-market-disparity
+
+on:
+  schedule:
+    # KST 16:20 = UTC 07:20, 평일(월~금)에만 실행 (스케줄은 항상 종가 모드)
+    - cron: "20 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      run_type:
+        description: "갱신 모드 (intraday=장중 현재가 / close=종가)"
+        type: choice
+        options:
+          - intraday
+          - close
+        default: intraday
+
+permissions:
+  contents: write
+
+# 동시에 한 번만 실행(겹치는 실행은 큐잉, 진행 중인 건 취소하지 않음)
+concurrency:
+  group: update-market-disparity
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run tests (pytest 있으면 실행, 없으면 스킵)
+        run: |
+          if python -c "import pytest" 2>/dev/null; then
+            echo "pytest 발견 → 테스트 실행"
+            pytest -q
+          else
+            echo "pytest 없음 → 테스트 스킵"
+          fi
+
+      - name: Update data
+        # 수동 실행 시 선택한 모드, 스케줄 실행 시에는 close(종가)
+        run: python scripts/update.py --run-type "${{ github.event.inputs.run_type || 'close' }}" --force
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/latest.json docs/data/history.json
+          if git diff --cached --quiet; then
+            echo "변경사항 없음 → 커밋하지 않음"
+            exit 0
+          fi
+          ts=$(date -u +"%Y-%m-%dT%H:%MZ")
+          git commit -m "data: update market disparity ${ts}"
+          n=0
+          until git push; do
+            n=$((n+1))
+            if [ "$n" -ge 3 ]; then
+              echo "push 3회 실패 → 종료"
+              exit 1
+            fi
+            echo "push 실패, 재시도 ${n} ..."
+            git pull --rebase --autostash || true
+            sleep 5
+          done
+          echo "push 완료"

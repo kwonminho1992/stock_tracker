@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>시장 · 종목 이격도 트래커</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>시장 · 종목 이격도 트래커</h1>
+    <p class="subtitle">종가 기준 50일 이동평균 이격도로 단기 과열도를 점검합니다.</p>
+    <p class="meta">
+      <span id="updated-at">불러오는 중…</span>
+      <span id="run-type" class="badge"></span>
+    </p>
+  </header>
+
+  <main>
+    <section class="legend" aria-label="구간 범례">
+      <span class="legend-item zone-overheat">과열 (≥130)</span>
+      <span class="legend-item zone-caution">경계 (120–130)</span>
+      <span class="legend-item zone-normal">정상 (105–120)</span>
+      <span class="legend-item zone-cooldown">과열해소 (≤105)</span>
+    </section>
+
+    <section class="card table-section">
+      <div class="section-controls">
+        <h2>최신 이격도</h2>
+        <label class="sort-toggle">
+          <input type="checkbox" id="sort-by-disparity" />
+          50일 이격도 높은 순 정렬
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="latest-table">
+          <thead>
+            <tr>
+              <th>자산명</th>
+              <th class="num">종가</th>
+              <th class="num">등락률</th>
+              <th class="num">20일</th>
+              <th class="num">50일</th>
+              <th class="num">120일</th>
+              <th>구간</th>
+              <th>경고</th>
+            </tr>
+          </thead>
+          <tbody id="latest-tbody">
+            <tr><td colspan="8" class="loading">데이터 불러오는 중…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card chart-section">
+      <div class="section-controls">
+        <h2>50일 이격도 추이 (최근 1년)</h2>
+        <select id="asset-select" aria-label="자산 선택"></select>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="disparity-chart"></canvas>
+      </div>
+      <p class="chart-note">점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="sources">
+      데이터 출처: 국내 지수·종목 = <strong>KRX (pykrx)</strong> ·
+      해외 지수·종목 = <strong>Yahoo Finance (yfinance)</strong>.
+      종가 기준이며 평일 장마감 후(KST 16:20) 자동 갱신됩니다.
+      <strong>장중 수동 갱신</strong> 시에는 전 종목을 Yahoo Finance(yfinance) 지연시세로 계산합니다.
+    </p>
+    <p>
+      본 페이지는 정보 제공용이며 투자 권유가 아닙니다.
+      무료 데이터 소스는 지연·결측·오류가 있을 수 있으며,
+      모든 투자 판단과 책임은 이용자 본인에게 있습니다.
+    </p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
