@@ -54,6 +54,8 @@ disparity120 = close / ma120 * 100
 
 > 위 해석은 참고용 가이드일 뿐 매매 신호가 아닙니다. 경계값은
 > [`scripts/config.py`](scripts/config.py) 의 `ZONE_*_MIN` 에서 조정할 수 있습니다.
+> 특히 개별종목은 종목별 변동성·추세가 달라 같은 `disparity50` 값이라도 과열 해석이
+> 다를 수 있습니다. 현재 고정 기준선은 시장/지수와 종목을 빠르게 비교하기 위한 참고선입니다.
 
 검증 플래그:
 
@@ -67,16 +69,27 @@ disparity120 = close / ma120 * 100
 
 [`scripts/config.py`](scripts/config.py) 의 `ASSETS` 에서 관리합니다(한 줄 추가/삭제로 변경).
 
-**국내 지수 (pykrx)**
-- 코스피 `1001`, 코스피200 `1028`, 코스닥 `2001`
+**국내 지수 (yfinance)**
+- 코스피 `^KS11`, 코스피200 `^KS200`, 코스닥 `^KQ11` — GitHub Actions 무인 실행 안정성을 위해 yfinance 사용
+
+**반도체 관련 지수/대용 지표 (yfinance)**
+- 한국 반도체 `091160.KS` — KODEX 반도체 ETF(국내 반도체 지수 대용)
+- 닛케이 반도체 `200A.T` — Nikkei Semiconductor Stock Index 추종 ETF(지수 대용)
+- PHLX 반도체 `^SOX`
+
+**일본 지수 (yfinance)**
+- 닛케이225 `^N225`
 
 **국내 개별종목 (pykrx)**
 - SK하이닉스 `000660`, 삼성전자 `005930`, 삼성전기 `009150`, LG이노텍 `011070`
+- SK스퀘어 `402340`, 삼성물산 `028260`
 - SOL AI반도체TOP2 PLUS — **종목코드 미확정(TODO)**. `config.py` 에서 코드 입력 후
   `enabled: True` 로 바꾸면 활성화됩니다.
 
 **해외 지수/종목 (yfinance)**
-- S&P500 `^GSPC`, 나스닥100 `^NDX`, 마이크론 `MU`, 엔비디아 `NVDA`, 브로드컴 `AVGO`
+- S&P500 `^GSPC`, 나스닥100 `^NDX`
+- 마이크론 `MU`, 엔비디아 `NVDA`, 샌디스크 `SNDK`, 브로드컴 `AVGO`, TSMC ADR `TSM`
+- 키옥시아 `285A.T`
 
 > 코스닥 종합지수 코드(`2001`)나 ETF 코드가 의심되면 값이 비정상으로 표시되니
 > 화면의 경고를 보고 `config.py` 에서 수정하세요.
@@ -87,9 +100,10 @@ disparity120 = close / ma120 * 100
 
 | 대상            | 라이브러리 | 함수                                |
 | --------------- | ---------- | ----------------------------------- |
-| 국내 지수       | pykrx      | `stock.get_index_ohlcv`             |
+| 국내 대표지수   | yfinance   | `yf.download(..., auto_adjust=True)`|
 | 국내 종목/ETF   | pykrx      | `stock.get_market_ohlcv`            |
-| 해외 지수/종목  | yfinance   | `yf.download(..., auto_adjust=True)`|
+| 해외·일본 지수/종목 | yfinance   | `yf.download(..., auto_adjust=True)`|
+| 국내 섹터 ETF   | yfinance   | `yf.download(..., auto_adjust=True)`|
 
 - 모든 데이터는 **일봉 종가** 기준으로 통일합니다.
 - 내부적으로는 모두 `date` 인덱스 + `close` 컬럼을 가진 표준 DataFrame 으로 변환합니다.

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import math
+from datetime import timedelta
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -133,6 +134,8 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
         "code": asset["code"],
         "market": asset["market"],
         "asset_type": asset["asset_type"],
+        "source": asset.get("source"),
+        "note": asset.get("note"),
         "date": pd.Timestamp(last_date).strftime("%Y-%m-%d"),
         "close": close,
         "ma20": round_or_none(_cell(last, "ma20")),
@@ -165,7 +168,7 @@ def build_history_records(
         return []
 
     last_date = pd.Timestamp(sub.index[-1])
-    cutoff = last_date - pd.Timedelta(days=history_days)
+    cutoff = last_date - timedelta(days=int(history_days))
     sub = sub[sub.index >= cutoff]
 
     records: List[Dict] = []

@@ -64,6 +64,8 @@ def make_error_record(asset: Dict, message: str) -> Dict:
         "code": asset.get("code", "?"),
         "market": asset.get("market", "?"),
         "asset_type": asset.get("asset_type", "?"),
+        "source": asset.get("source"),
+        "note": asset.get("note"),
         "error": message,
     }
 
@@ -148,6 +150,8 @@ def process_asset(
             "code": asset["code"],
             "market": asset["market"],
             "asset_type": asset["asset_type"],
+            "source": asset.get("source"),
+            "note": asset.get("note"),
             "data": history,
         }
 

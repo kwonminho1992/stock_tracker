@@ -114,7 +114,7 @@ function rowHtml(a) {
     return `<tr class="row-error" data-code="${escapeHtml(a.code)}">
       <td><div class="asset-name">${escapeHtml(a.name)}</div><div class="asset-source">${escapeHtml(
         sourceLabel(a)
-      )}</div></td>
+      )}</div>${assetNotesHtml(a)}</td>
       <td colspan="6"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
         a.error
       )}</td>
@@ -138,7 +138,7 @@ function rowHtml(a) {
   )}">
     <td><div class="asset-name">${escapeHtml(a.name)}</div><div class="asset-source">${escapeHtml(
       sourceLabel(a)
-    )}</div></td>
+    )}</div>${assetNotesHtml(a)}</td>
     <td class="num">${fmtNum(a.close)}</td>
     <td class="num ${changeCls}">${changeTxt}</td>
     <td class="num">${fmtDisp(a.disparity20)}</td>
@@ -198,10 +198,12 @@ function renderChart() {
 
   const labels = entry.data.map((d) => d.date);
   const values = entry.data.map((d) => d.disparity50);
+  const closes = entry.data.map((d) => d.close);
 
   const refLine = (val, color) => ({
     label: `ref-${val}`,
     data: labels.map(() => val),
+    yAxisID: "disparity",
     borderColor: color,
     borderWidth: 1,
     borderDash: [5, 5],
@@ -214,11 +216,23 @@ function renderChart() {
     {
       label: `${entry.name} 50일 이격도`,
       data: values,
+      yAxisID: "disparity",
       borderColor: "#4c8bf5",
       backgroundColor: "rgba(76,139,245,0.12)",
       borderWidth: 2,
       pointRadius: 0,
       fill: true,
+      tension: 0.15,
+    },
+    {
+      label: `${entry.name} 가격`,
+      data: closes,
+      yAxisID: "price",
+      borderColor: "#d9a441",
+      backgroundColor: "rgba(217,164,65,0.08)",
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false,
       tension: 0.15,
     },
     refLine(130, "#ff7b8a"),
@@ -239,7 +253,26 @@ function renderChart() {
           ticks: { color: "#9aa7b4", maxTicksLimit: 8, autoSkip: true },
           grid: { color: "#222b36" },
         },
-        y: { ticks: { color: "#9aa7b4" }, grid: { color: "#222b36" } },
+        disparity: {
+          type: "linear",
+          position: "left",
+          ticks: {
+            color: "#9aa7b4",
+            callback: (value) => `${value}%`,
+          },
+          grid: { color: "#222b36" },
+          title: { display: true, text: "이격도", color: "#9aa7b4" },
+        },
+        price: {
+          type: "linear",
+          position: "right",
+          ticks: {
+            color: "#b8a06a",
+            callback: (value) => fmtCompactNum(value),
+          },
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: "가격", color: "#b8a06a" },
+        },
       },
       plugins: {
         legend: {
@@ -250,12 +283,19 @@ function renderChart() {
           },
         },
         tooltip: {
+          filter: (item) => !String(item.dataset.label).startsWith("ref-"),
           callbacks: {
-            // 기준선 항목은 툴팁에서 제외
-            label: (ctx) =>
-              String(ctx.dataset.label).startsWith("ref-")
-                ? null
-                : `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(2)}`,
+            label: (ctx) => {
+              const row = entry.data[ctx.dataIndex] || {};
+              if (ctx.dataset.yAxisID === "price") {
+                return `${ctx.dataset.label}: ${fmtNum(row.close)}`;
+              }
+              return [
+                `${ctx.dataset.label}: ${fmtDisp(row.disparity50)}%`,
+                `가격: ${fmtNum(row.close)}`,
+                `50일선: ${fmtNum(row.ma50)}`,
+              ];
+            },
           },
         },
       },
@@ -269,12 +309,32 @@ function sourceLabel(a) {
   if (DATA.latest && DATA.latest.run_type === "intraday") {
     return "Yahoo Finance · yfinance";
   }
-  // 종가 모드: 국내 = pykrx(KRX), 해외 = yfinance(Yahoo)
-  return a.market === "US" ? "Yahoo Finance · yfinance" : "KRX · pykrx";
+  if (a.source === "yfinance") return "Yahoo Finance · yfinance";
+  if (a.source === "pykrx_index" || a.source === "pykrx_stock") return "KRX · pykrx";
+  return a.market === "US" || a.market === "JP"
+    ? "Yahoo Finance · yfinance"
+    : "KRX · pykrx";
+}
+function assetNotesHtml(a) {
+  const notes = [];
+  if (isIndividualStock(a)) notes.push("개별종목은 과열 기준 종목별 상이");
+  if (a.note) notes.push(a.note);
+  if (notes.length === 0) return "";
+  return `<div class="asset-note">${notes.map(escapeHtml).join(" · ")}</div>`;
+}
+function isIndividualStock(a) {
+  return String(a.asset_type || "").endsWith("_stock");
 }
 function fmtNum(v) {
   if (v == null) return "-";
   return Number(v).toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+}
+function fmtCompactNum(v) {
+  if (v == null) return "-";
+  return Number(v).toLocaleString("ko-KR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
 }
 function fmtDisp(v) {
   if (v == null) return "-";

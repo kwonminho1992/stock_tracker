@@ -23,6 +23,9 @@
       <span class="legend-item zone-normal">정상 (105–120)</span>
       <span class="legend-item zone-cooldown">과열해소 (≤105)</span>
     </section>
+    <p class="interpretation-note">
+      고정 기준선은 시장/지수 비교용 참고선입니다. 개별종목은 변동성·추세가 달라 과열 기준이 종목마다 다르게 해석됩니다.
+    </p>
 
     <section class="card table-section">
       <div class="section-controls">
@@ -55,20 +58,20 @@
 
     <section class="card chart-section">
       <div class="section-controls">
-        <h2>50일 이격도 추이 (최근 1년)</h2>
+        <h2>50일 이격도 · 가격 추이 (최근 1년)</h2>
         <select id="asset-select" aria-label="자산 선택"></select>
       </div>
       <div class="chart-wrap">
         <canvas id="disparity-chart"></canvas>
       </div>
-      <p class="chart-note">점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
+      <p class="chart-note">왼쪽 축: 이격도 · 오른쪽 축: 가격 · 점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
     </section>
   </main>
 
   <footer class="site-footer">
     <p class="sources">
-      데이터 출처: 국내 지수·종목 = <strong>KRX (pykrx)</strong> ·
-      해외 지수·종목 = <strong>Yahoo Finance (yfinance)</strong>.
+      데이터 출처: 국내 지수·개별종목 일부 = <strong>KRX (pykrx)</strong> ·
+      해외/일본 지수·종목 및 일부 섹터지수 = <strong>Yahoo Finance (yfinance)</strong>.
       종가 기준이며 평일 장마감 후(KST 16:20) 자동 갱신됩니다.
       <strong>장중 수동 갱신</strong> 시에는 전 종목을 Yahoo Finance(yfinance) 지연시세로 계산합니다.
     </p>

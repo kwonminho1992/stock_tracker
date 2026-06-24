@@ -67,27 +67,34 @@ HISTORY_DAYS: int = 365
 # 추적 자산 목록
 #   name       : 화면에 표시할 이름
 #   code       : 식별 코드 (pykrx 티커 / yfinance 심볼)
-#   market     : "KR" | "US"
-#   asset_type : "kr_index" | "kr_stock" | "us_index" | "us_stock"
+#   market     : "KR" | "US" | "JP"
+#   asset_type : "kr_index" | "kr_stock" | "us_index" | "us_stock" | "jp_index" | "jp_stock" | "semiconductor_index"
 #   source     : "pykrx_index" | "pykrx_stock" | "yfinance"  (종가 모드에서 사용)
 #   yf_ticker  : 장중(intraday) 모드에서 쓰는 yfinance 심볼
 #                (국내 종목=<코드>.KS, 코스피=^KS11, 코스닥=^KQ11, 해외=code 그대로)
+#   note       : 화면에 함께 보여줄 짧은 참고 문구(선택)
 #   enabled    : False 이면 수집에서 제외 (코드 미확정 종목 등)
 # ---------------------------------------------------------------------------
 
 ASSETS: List[Dict] = [
-    # ----- 국내 지수 (종가=pykrx / 장중=yfinance) -----
-    {"name": "코스피",     "code": "1001", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KS11",  "enabled": True},
-    # ^KS200(코스피200) 야후 심볼은 미확정. 장중 모드에서 실패하면 이 자산만 error 로 뜨고 전체엔 영향 없음.
-    {"name": "코스피200",  "code": "1028", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KS200", "enabled": True},
-    # 코스닥 종합지수. pykrx 코드 "2001", yfinance ^KQ11. 값이 비정상이면 확인(코스닥150=pykrx "2203").
-    {"name": "코스닥",     "code": "2001", "market": "KR", "asset_type": "kr_index", "source": "pykrx_index", "yf_ticker": "^KQ11",  "enabled": True},
+    # ----- 국내 지수 (GitHub Actions 무인 실행 안정성을 위해 yfinance 사용) -----
+    {"name": "코스피",     "code": "1001", "market": "KR", "asset_type": "kr_index", "source": "yfinance", "yf_ticker": "^KS11",  "enabled": True},
+    {"name": "코스피200",  "code": "1028", "market": "KR", "asset_type": "kr_index", "source": "yfinance", "yf_ticker": "^KS200", "enabled": True},
+    {"name": "코스닥",     "code": "2001", "market": "KR", "asset_type": "kr_index", "source": "yfinance", "yf_ticker": "^KQ11",  "enabled": True},
+
+    # ----- 해외/섹터 지수 (yfinance) -----
+    {"name": "닛케이225", "code": "^N225", "market": "JP", "asset_type": "jp_index", "source": "yfinance", "yf_ticker": "^N225", "enabled": True},
+    {"name": "한국 반도체", "code": "091160.KS", "market": "KR", "asset_type": "semiconductor_index", "source": "yfinance", "yf_ticker": "091160.KS", "note": "KODEX 반도체 ETF, 국내 반도체 지수 대용", "enabled": True},
+    {"name": "닛케이 반도체", "code": "200A.T", "market": "JP", "asset_type": "semiconductor_index", "source": "yfinance", "yf_ticker": "200A.T", "note": "Nikkei Semiconductor Stock Index 추종 ETF", "enabled": True},
+    {"name": "PHLX 반도체", "code": "^SOX", "market": "US", "asset_type": "semiconductor_index", "source": "yfinance", "yf_ticker": "^SOX", "enabled": True},
 
     # ----- 국내 개별종목 (종가=pykrx / 장중=yfinance, 티커=<코드>.KS) -----
     {"name": "SK하이닉스", "code": "000660", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "000660.KS", "enabled": True},
     {"name": "삼성전자",   "code": "005930", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "005930.KS", "enabled": True},
     {"name": "삼성전기",   "code": "009150", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "009150.KS", "enabled": True},
     {"name": "LG이노텍",   "code": "011070", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "011070.KS", "enabled": True},
+    {"name": "SK스퀘어",   "code": "402340", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "402340.KS", "enabled": True},
+    {"name": "삼성물산",   "code": "028260", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "028260.KS", "enabled": True},
     # TODO: SOL AI반도체TOP2 PLUS ETF 종목코드를 확인해 code 와 yf_ticker(예: "473490.KS")를 채우고 enabled=True 로 변경.
     {"name": "SOL AI반도체TOP2 PLUS", "code": "TODO_FILL_ME", "market": "KR", "asset_type": "kr_stock", "source": "pykrx_stock", "yf_ticker": "TODO_FILL_ME", "enabled": False},
 
@@ -96,7 +103,10 @@ ASSETS: List[Dict] = [
     {"name": "나스닥100", "code": "^NDX",  "market": "US", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^NDX",  "enabled": True},
     {"name": "마이크론",  "code": "MU",    "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "MU",    "enabled": True},
     {"name": "엔비디아",  "code": "NVDA",  "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "NVDA",  "enabled": True},
+    {"name": "샌디스크",  "code": "SNDK",  "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "SNDK",  "enabled": True},
     {"name": "브로드컴",  "code": "AVGO",  "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "AVGO",  "enabled": True},
+    {"name": "TSMC",      "code": "TSM",   "market": "US", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "TSM",   "note": "TSMC ADR", "enabled": True},
+    {"name": "키옥시아",  "code": "285A.T", "market": "JP", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "285A.T", "enabled": True},
 ]
 
 
