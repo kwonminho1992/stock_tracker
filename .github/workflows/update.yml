@@ -2,8 +2,8 @@ name: update-market-disparity
 
 on:
   schedule:
-    # KST 16:20 = UTC 07:20, 평일(월~금)에만 실행 (스케줄은 항상 종가 모드)
-    - cron: "20 7 * * 1-5"
+    # 평일 매시간 20분에 실행. GitHub 스케줄은 UTC 기준이며 지연될 수 있다.
+    - cron: "20 * * * 1-5"
   workflow_dispatch:
     inputs:
       run_type:
@@ -49,8 +49,8 @@ jobs:
           fi
 
       - name: Update data
-        # 수동 실행 시 선택한 모드, 스케줄 실행 시에는 close(종가)
-        run: python scripts/update.py --run-type "${{ github.event.inputs.run_type || 'close' }}" --force
+        # 스케줄 실행은 intraday(지연시세), 수동 실행은 선택한 모드 사용.
+        run: python scripts/update.py --run-type "${{ github.event_name == 'schedule' && 'intraday' || github.event.inputs.run_type || 'close' }}" --force
 
       - name: Commit & push if changed
         run: |

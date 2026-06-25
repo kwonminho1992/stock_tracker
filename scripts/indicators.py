@@ -11,12 +11,24 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from config import (
+    DEFAULT_PRIMARY_WINDOW,
     HISTORY_DAYS,
+    STOCK_PRIMARY_WINDOW,
     ZONE_CAUTION_MIN,
     ZONE_LABELS,
     ZONE_NORMAL_MIN,
     ZONE_OVERHEAT_MIN,
 )
+
+
+def is_individual_stock(asset: Dict) -> bool:
+    """개별 종목이면 True. 섹터 ETF/지수 대용 지표는 False."""
+    return str(asset.get("asset_type", "")).endswith("_stock")
+
+
+def primary_window_for_asset(asset: Dict) -> int:
+    """과열 구간 판정에 사용할 이격도 기간."""
+    return STOCK_PRIMARY_WINDOW if is_individual_stock(asset) else DEFAULT_PRIMARY_WINDOW
 
 
 def add_moving_averages(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
@@ -52,8 +64,8 @@ def add_disparities(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
     return out
 
 
-def classify_zone(disparity50: Optional[float]) -> Optional[str]:
-    """disparity50 값을 구간 코드로 분류. 값이 없거나 비정상이면 None.
+def classify_zone(disparity: Optional[float]) -> Optional[str]:
+    """기준 이격도 값을 구간 코드로 분류. 값이 없거나 비정상이면 None.
 
     경계:
       >= 130            -> overheat
@@ -61,10 +73,10 @@ def classify_zone(disparity50: Optional[float]) -> Optional[str]:
       105 <  x < 120    -> normal
       x <= 105          -> cooldown
     """
-    if disparity50 is None:
+    if disparity is None:
         return None
     try:
-        d = float(disparity50)
+        d = float(disparity)
     except (TypeError, ValueError):
         return None
     if not math.isfinite(d):
@@ -116,34 +128,44 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
 
     last = df.iloc[-1]
     last_date = df.index[-1]
+    primary_window = primary_window_for_asset(asset)
 
     close = round_or_none(_cell(last, "close"))
 
     # 등락률: 직전 종가 대비.
     change_pct: Optional[float] = None
     if len(df) >= 2 and close is not None:
-        prev_close = df["close"].iloc[-2]
+        prev_close = df.attrs.get("latest_previous_close", df["close"].iloc[-2])
         if pd.notna(prev_close) and float(prev_close) > 0:
             change_pct = (close / float(prev_close) - 1.0) * 100.0
 
+    d25 = round_or_none(_cell(last, "disparity25"))
     d50 = round_or_none(_cell(last, "disparity50"))
-    zone = classify_zone(d50)
+    primary_disparity = round_or_none(_cell(last, f"disparity{primary_window}"))
+    zone = classify_zone(primary_disparity)
 
     return {
         "name": asset["name"],
         "code": asset["code"],
+        "ticker": asset.get("yf_ticker") or asset["code"],
         "market": asset["market"],
+        "country": asset.get("country", asset.get("market")),
+        "sector": asset.get("sector"),
         "asset_type": asset["asset_type"],
         "source": asset.get("source"),
         "note": asset.get("note"),
         "date": pd.Timestamp(last_date).strftime("%Y-%m-%d"),
         "close": close,
         "ma20": round_or_none(_cell(last, "ma20")),
+        "ma25": round_or_none(_cell(last, "ma25")),
         "ma50": round_or_none(_cell(last, "ma50")),
         "ma120": round_or_none(_cell(last, "ma120")),
         "disparity20": round_or_none(_cell(last, "disparity20")),
+        "disparity25": d25,
         "disparity50": d50,
         "disparity120": round_or_none(_cell(last, "disparity120")),
+        "primary_window": primary_window,
+        "primary_disparity": primary_disparity,
         "change_pct": round_or_none(change_pct),
         "zone": zone,
         "zone_label": zone_label(zone),
@@ -156,14 +178,16 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
 def build_history_records(
     asset: Dict, df: pd.DataFrame, history_days: int = HISTORY_DAYS
 ) -> List[Dict]:
-    """최근 history_days 일의 disparity50 히스토리 레코드 리스트 생성.
+    """최근 history_days 일의 이격도 히스토리 레코드 리스트 생성.
 
-    disparity50 이 NaN 인 (워밍업) 구간은 제외한다.
+    판정 기준 이격도가 NaN 인 (워밍업) 구간은 제외한다.
     """
-    if df is None or df.empty or "disparity50" not in df.columns:
+    primary_window = primary_window_for_asset(asset)
+    primary_col = f"disparity{primary_window}"
+    if df is None or df.empty or primary_col not in df.columns:
         return []
 
-    sub = df.dropna(subset=["disparity50"])
+    sub = df.dropna(subset=[primary_col])
     if sub.empty:
         return []
 
@@ -173,16 +197,21 @@ def build_history_records(
 
     records: List[Dict] = []
     for idx, row in sub.iterrows():
+        d25 = round_or_none(row.get("disparity25"))
         d50 = round_or_none(row.get("disparity50"))
-        if d50 is None:
+        primary_disparity = round_or_none(row.get(primary_col))
+        if primary_disparity is None:
             continue
         records.append(
             {
                 "date": pd.Timestamp(idx).strftime("%Y-%m-%d"),
                 "close": round_or_none(row.get("close")),
+                "ma25": round_or_none(row.get("ma25")),
                 "ma50": round_or_none(row.get("ma50")),
+                "disparity25": d25,
                 "disparity50": d50,
-                "zone": classify_zone(d50),
+                "primary_disparity": primary_disparity,
+                "zone": classify_zone(primary_disparity),
             }
         )
     return records

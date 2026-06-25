@@ -1,7 +1,7 @@
 """데이터 검증.
 
 가장 중요한 원칙: 값이 의심스러우면 '조용히 정상처럼' 보여주지 않는다.
-- 치명적 문제(close<=0, ma50<=0, ma50 계산불가) → 호출측에서 error 자산으로 처리하도록 메시지 반환
+- 치명적 문제(close<=0, 기준 이동평균<=0, 기준 이동평균 계산불가) → 호출측에서 error 자산으로 처리하도록 메시지 반환
 - 소프트 문제(이격도 비정상 범위, 데이터 오래됨) → 레코드에 플래그/경고를 단다
 """
 from __future__ import annotations
@@ -41,16 +41,18 @@ def check_fatal(record: Dict) -> Optional[str]:
     """최신 레코드에 치명적 문제가 있으면 에러 메시지, 없으면 None.
 
     - close 값이 0 이하 → error
-    - ma50 값이 None(계산불가) 또는 0 이하 → error
+    - 기준 이동평균 값이 None(계산불가) 또는 0 이하 → error
     """
     close = record.get("close")
     if close is None or close <= 0:
         return f"close 값이 비정상입니다: {close}"
-    ma50 = record.get("ma50")
-    if ma50 is None:
-        return "ma50 계산 불가 (데이터 부족 가능성: 최소 50거래일 필요)"
-    if ma50 <= 0:
-        return f"ma50 값이 비정상입니다: {ma50}"
+    primary_window = record.get("primary_window") or 50
+    ma_key = f"ma{primary_window}"
+    ma = record.get(ma_key)
+    if ma is None:
+        return f"{ma_key} 계산 불가 (데이터 부족 가능성: 최소 {primary_window}거래일 필요)"
+    if ma <= 0:
+        return f"{ma_key} 값이 비정상입니다: {ma}"
     return None
 
 
@@ -68,15 +70,17 @@ def apply_soft_flags(record: Dict, today: Optional[date] = None) -> Dict:
 
     warnings: List[str] = []
 
-    # 1) 이격도 비정상 범위 → 값 확인 필요(suspicious)
-    d50 = record.get("disparity50")
+    # 1) 기준 이격도 비정상 범위 → 값 확인 필요(suspicious)
+    primary_window = record.get("primary_window") or 50
+    primary_disparity = record.get("primary_disparity")
     suspicious = False
-    if d50 is not None and (
-        d50 < SUSPICIOUS_DISPARITY_MIN or d50 > SUSPICIOUS_DISPARITY_MAX
+    if primary_disparity is not None and (
+        primary_disparity < SUSPICIOUS_DISPARITY_MIN
+        or primary_disparity > SUSPICIOUS_DISPARITY_MAX
     ):
         suspicious = True
         warnings.append(
-            f"disparity50 {d50} 가 정상범위"
+            f"disparity{primary_window} {primary_disparity} 가 정상범위"
             f"[{SUSPICIOUS_DISPARITY_MIN}, {SUSPICIOUS_DISPARITY_MAX}]를 벗어남"
         )
 

@@ -44,7 +44,7 @@ async function loadData() {
     renderChart();
   } catch (err) {
     document.getElementById("latest-tbody").innerHTML =
-      `<tr><td colspan="8" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
+      `<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
         String(err)
       )}</td></tr>`;
   }
@@ -76,15 +76,20 @@ function renderHeader() {
 
 function renderTable() {
   const tbody = document.getElementById("latest-tbody");
-  const assets = ((DATA.latest && DATA.latest.assets) || []).slice();
+  const assets = ((DATA.latest && DATA.latest.assets) || []).map((a, idx) => ({
+    ...a,
+    _order: idx,
+  }));
   if (assets.length === 0) {
     tbody.innerHTML =
-      `<tr><td colspan="8" class="loading">표시할 데이터가 없습니다.</td></tr>`;
+      `<tr><td colspan="9" class="loading">표시할 데이터가 없습니다.</td></tr>`;
     return;
   }
 
   if (sortByDisparity) {
-    assets.sort((a, b) => disparityForSort(b) - disparityForSort(a));
+    assets.sort(groupedAssetCompare(true));
+  } else {
+    assets.sort(groupedAssetCompare(false));
   }
 
   tbody.innerHTML = assets.map(rowHtml).join("");
@@ -104,8 +109,36 @@ function renderTable() {
 }
 
 function disparityForSort(a) {
-  if (a.error || a.disparity50 == null) return -Infinity;
-  return a.disparity50;
+  if (a.error || a.primary_disparity == null) return -Infinity;
+  return a.primary_disparity;
+}
+
+function groupedAssetCompare(sortByMetric) {
+  return (a, b) => {
+    const countryDiff = countryRank(a) - countryRank(b);
+    if (countryDiff !== 0) return countryDiff;
+    const typeDiff = assetTypeRank(a) - assetTypeRank(b);
+    if (typeDiff !== 0) return typeDiff;
+    if (sortByMetric) {
+      const metricDiff = disparityForSort(b) - disparityForSort(a);
+      if (metricDiff !== 0) return metricDiff;
+    }
+    return (a._order || 0) - (b._order || 0);
+  };
+}
+
+function countryRank(a) {
+  const order = { KR: 0, JP: 1, TW: 2, US: 3 };
+  const country = a.country || a.market || "";
+  return Object.prototype.hasOwnProperty.call(order, country) ? order[country] : 99;
+}
+
+function assetTypeRank(a) {
+  const t = String(a.asset_type || "");
+  if (t.endsWith("_index")) return 0;
+  if (t === "semiconductor_index") return 1;
+  if (t.endsWith("_stock")) return 2;
+  return 9;
 }
 
 function rowHtml(a) {
@@ -115,7 +148,7 @@ function rowHtml(a) {
       <td><div class="asset-name">${escapeHtml(a.name)}</div><div class="asset-source">${escapeHtml(
         sourceLabel(a)
       )}</div>${assetNotesHtml(a)}</td>
-      <td colspan="6"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
+      <td colspan="7"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
         a.error
       )}</td>
       <td></td>
@@ -142,11 +175,12 @@ function rowHtml(a) {
     <td class="num">${fmtNum(a.close)}</td>
     <td class="num ${changeCls}">${changeTxt}</td>
     <td class="num">${fmtDisp(a.disparity20)}</td>
-    <td class="num">${fmtDisp(a.disparity50)}</td>
+    <td class="num ${primaryMetricClass(a, 25)}">${fmtDisp(a.disparity25)}</td>
+    <td class="num ${primaryMetricClass(a, 50)}">${fmtDisp(a.disparity50)}</td>
     <td class="num">${fmtDisp(a.disparity120)}</td>
     <td><span class="zone-pill ${zoneMeta.cls}">${escapeHtml(
       zoneMeta.label
-    )}</span></td>
+    )}</span><div class="basis-note">${basisLabel(a)}</div></td>
     <td>${warns.join(" ")}</td>
   </tr>`;
 }
@@ -170,6 +204,15 @@ function populateAssetSelect() {
     selectedCode = null;
     return;
   }
+  const latestOrder = new Map(
+    ((DATA.latest && DATA.latest.assets) || []).map((a, idx) => [a.code, idx])
+  );
+  codes.sort((a, b) =>
+    groupedAssetCompare(false)(
+      { ...hist[a], _order: latestOrder.get(a) ?? 9999 },
+      { ...hist[b], _order: latestOrder.get(b) ?? 9999 }
+    )
+  );
   sel.innerHTML = codes
     .map(
       (c) =>
@@ -197,7 +240,10 @@ function renderChart() {
   }
 
   const labels = entry.data.map((d) => d.date);
-  const values = entry.data.map((d) => d.disparity50);
+  const primaryWindow = entry.primary_window || 50;
+  const values = entry.data.map((d) =>
+    d.primary_disparity == null ? d[`disparity${primaryWindow}`] : d.primary_disparity
+  );
   const closes = entry.data.map((d) => d.close);
 
   const refLine = (val, color) => ({
@@ -214,7 +260,7 @@ function renderChart() {
 
   const datasets = [
     {
-      label: `${entry.name} 50일 이격도`,
+      label: `${entry.name} ${primaryWindow}일 판정 이격도`,
       data: values,
       yAxisID: "disparity",
       borderColor: "#4c8bf5",
@@ -291,8 +337,13 @@ function renderChart() {
                 return `${ctx.dataset.label}: ${fmtNum(row.close)}`;
               }
               return [
-                `${ctx.dataset.label}: ${fmtDisp(row.disparity50)}%`,
+                `${ctx.dataset.label}: ${fmtDisp(
+                  row.primary_disparity == null
+                    ? row[`disparity${primaryWindow}`]
+                    : row.primary_disparity
+                )}%`,
                 `가격: ${fmtNum(row.close)}`,
+                `25일선: ${fmtNum(row.ma25)}`,
                 `50일선: ${fmtNum(row.ma50)}`,
               ];
             },
@@ -305,25 +356,41 @@ function renderChart() {
 
 // ---- helpers ----
 function sourceLabel(a) {
-  // 장중 모드에서는 전 종목을 yfinance 지연시세로 받는다.
+  // 장중 모드: 국내 개별종목은 KRX 히스토리에 Yahoo 최신가를 보강하고, 나머지는 yfinance 조회.
   if (DATA.latest && DATA.latest.run_type === "intraday") {
+    if (a.source === "pykrx_stock+yfinance") return "KRX · pykrx + Yahoo Finance";
     return "Yahoo Finance · yfinance";
   }
   if (a.source === "yfinance") return "Yahoo Finance · yfinance";
   if (a.source === "pykrx_index" || a.source === "pykrx_stock") return "KRX · pykrx";
+  if (a.source === "pykrx_stock+yfinance") return "KRX · pykrx + Yahoo Finance";
   return a.market === "US" || a.market === "JP"
     ? "Yahoo Finance · yfinance"
     : "KRX · pykrx";
 }
 function assetNotesHtml(a) {
-  const notes = [];
-  if (isIndividualStock(a)) notes.push("개별종목은 과열 기준 종목별 상이");
+  const notes = [
+    a.ticker || a.code,
+    countryLabel(a.country || a.market),
+    a.sector,
+    isIndividualStock(a) ? "판정: 25일" : "판정: 50일",
+  ].filter(Boolean);
   if (a.note) notes.push(a.note);
   if (notes.length === 0) return "";
   return `<div class="asset-note">${notes.map(escapeHtml).join(" · ")}</div>`;
 }
+function countryLabel(country) {
+  return { KR: "한국", JP: "일본", TW: "대만", US: "미국" }[country] || country;
+}
 function isIndividualStock(a) {
   return String(a.asset_type || "").endsWith("_stock");
+}
+function primaryMetricClass(a, window) {
+  return Number(a.primary_window || 50) === window ? "metric-primary" : "";
+}
+function basisLabel(a) {
+  const window = a.primary_window || 50;
+  return `${window}일 기준`;
 }
 function fmtNum(v) {
   if (v == null) return "-";

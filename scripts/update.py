@@ -62,7 +62,10 @@ def make_error_record(asset: Dict, message: str) -> Dict:
     return {
         "name": asset.get("name", "?"),
         "code": asset.get("code", "?"),
+        "ticker": asset.get("yf_ticker") or asset.get("code", "?"),
         "market": asset.get("market", "?"),
+        "country": asset.get("country", asset.get("market", "?")),
+        "sector": asset.get("sector"),
         "asset_type": asset.get("asset_type", "?"),
         "source": asset.get("source"),
         "note": asset.get("note"),
@@ -131,6 +134,12 @@ def process_asset(
         df = add_disparities(df, MA_WINDOWS)
 
         latest = build_latest_record(asset, df)
+        if run_type == "intraday":
+            latest["source"] = (
+                "pykrx_stock+yfinance"
+                if asset.get("asset_type") == "kr_stock"
+                else "yfinance"
+            )
 
         fatal = check_fatal(latest)
         if fatal:
@@ -141,17 +150,26 @@ def process_asset(
 
         history = build_history_records(asset, df, history_days=HISTORY_DAYS)
         if not history:
-            msg = "히스토리 데이터가 부족합니다(disparity50 계산 가능 구간 없음)."
+            primary_window = latest.get("primary_window", 50)
+            msg = f"히스토리 데이터가 부족합니다(disparity{primary_window} 계산 가능 구간 없음)."
             log(f"  ! {name}({code}) {msg}")
             return make_error_record(asset, msg), None
 
         hist_entry = {
             "name": asset["name"],
             "code": asset["code"],
+            "ticker": asset.get("yf_ticker") or asset["code"],
             "market": asset["market"],
+            "country": asset.get("country", asset.get("market")),
+            "sector": asset.get("sector"),
             "asset_type": asset["asset_type"],
-            "source": asset.get("source"),
+            "source": (
+                "pykrx_stock+yfinance"
+                if run_type == "intraday" and asset.get("asset_type") == "kr_stock"
+                else "yfinance" if run_type == "intraday" else asset.get("source")
+            ),
             "note": asset.get("note"),
+            "primary_window": latest.get("primary_window"),
             "data": history,
         }
 
@@ -163,7 +181,7 @@ def process_asset(
         flag_str = (" [" + ",".join(flags) + "]") if flags else ""
         log(
             f"  OK {name}({code}) "
-            f"close={latest['close']} d50={latest['disparity50']} "
+            f"close={latest['close']} d{latest.get('primary_window')}={latest.get('primary_disparity')} "
             f"zone={latest['zone']}({latest['zone_label']}){flag_str}"
         )
         return latest, (asset["code"], hist_entry)
@@ -283,7 +301,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--run-type",
         choices=["close", "intraday"],
         default="close",
-        help="close=종가(국내 pykrx), intraday=장중(전 종목 yfinance 지연시세)",
+        help="close=종가(국내 pykrx), intraday=장중(국내 종목 pykrx+yfinance, 그 외 yfinance)",
     )
     args = parser.parse_args(argv)
     run_type = args.run_type

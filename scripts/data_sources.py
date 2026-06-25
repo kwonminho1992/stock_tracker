@@ -10,6 +10,7 @@ pykrx / yfinance 는 함수 내부에서 lazy import 한다.
 """
 from __future__ import annotations
 
+import warnings
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
@@ -141,24 +142,60 @@ def _fetch_yf(ticker: str) -> pd.DataFrame:
     except ImportError as e:
         raise ImportError("yfinance 가 설치되지 않았습니다. `pip install yfinance`") from e
 
-    df = yf.download(
-        ticker,
-        period=US_PERIOD,
-        interval="1d",
-        auto_adjust=True,
-        progress=False,
-        threads=False,
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        df = yf.download(
+            ticker,
+            period=US_PERIOD,
+            interval="1d",
+            auto_adjust=True,
+            progress=False,
+            threads=False,
+        )
     if df is None or len(df) == 0:
         raise ValueError(f"[yfinance {ticker}] 빈 데이터 (심볼/네트워크 확인)")
 
     close = _extract_close_from_yf(df, ticker)
-    return _standardize(close, f"yfinance {ticker}")
+    out = _standardize(close, f"yfinance {ticker}")
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            fast_info = yf.Ticker(ticker).fast_info
+            previous_close = fast_info.get("previousClose")
+        if previous_close is not None and pd.notna(previous_close):
+            out.attrs["latest_previous_close"] = float(previous_close)
+    except Exception:
+        # quote 메타데이터가 실패해도 일봉 계산은 계속 진행한다.
+        pass
+
+    return out
 
 
 def fetch_us(asset: Dict) -> pd.DataFrame:
     """해외 지수/종목: yfinance 사용(yf_ticker 없으면 code 사용)."""
     return _fetch_yf(asset.get("yf_ticker") or asset["code"])
+
+
+def fetch_kr_stock_intraday(asset: Dict) -> pd.DataFrame:
+    """국내 개별종목 장중 모드: pykrx 종가 히스토리에 yfinance 최신가만 보강.
+
+    yfinance 국내 종목 히스토리는 일부 날짜가 KRX 종가와 어긋나는 경우가 있어,
+    이동평균 계산용 과거 데이터는 pykrx 를 우선한다. 단, 장중에는 pykrx 에 당일 봉이
+    없을 수 있으므로 yfinance 최신 행이 더 최신 날짜일 때만 추가한다.
+    """
+    base = fetch_kr_stock(asset)
+    yf_df = _fetch_yf(asset.get("yf_ticker") or f"{asset['code']}.KS")
+
+    out = base.copy()
+    if not yf_df.empty:
+        yf_last_date = yf_df.index[-1]
+        base_last_date = out.index[-1]
+        if yf_last_date > base_last_date:
+            out.loc[yf_last_date, "close"] = yf_df["close"].iloc[-1]
+            out = out.sort_index()
+        out.attrs.update(yf_df.attrs)
+    return out
 
 
 _FETCHERS = {
@@ -172,7 +209,8 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
     """run_type 과 asset['source'] 에 따라 적절한 fetch 함수로 라우팅.
 
     - run_type="close"    : 종가 모드. 국내=pykrx, 해외=yfinance.
-    - run_type="intraday" : 장중 모드. 전 종목을 yf_ticker 로 yfinance(지연시세) 조회.
+    - run_type="intraday" : 장중 모드. 국내 개별종목은 pykrx 종가 히스토리에
+      yfinance 최신가를 보강하고, 나머지는 yf_ticker 로 yfinance(지연시세) 조회.
     """
     if run_type == "intraday":
         yf_ticker = asset.get("yf_ticker")
@@ -180,6 +218,8 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
             raise ValueError(
                 f"장중 모드에는 yf_ticker 가 필요합니다(미설정): {asset.get('name')}"
             )
+        if asset.get("asset_type") == "kr_stock":
+            return fetch_kr_stock_intraday(asset)
         return _fetch_yf(yf_ticker)
 
     source = asset.get("source")

@@ -92,7 +92,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  min-width: 680px;
+  min-width: 760px;
 }
 th, td {
   padding: 9px 10px;
@@ -101,6 +101,10 @@ th, td {
   white-space: nowrap;
 }
 th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.metric-primary {
+  color: var(--text);
+  font-weight: 700;
+}
 thead th {
   color: var(--text-dim);
   font-weight: 600;
@@ -125,6 +129,7 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
 .asset-name { font-weight: 500; }
 .asset-source { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
 .asset-note { font-size: 0.68rem; color: var(--caution-fg); margin-top: 2px; }
+.basis-note { font-size: 0.68rem; color: var(--text-dim); margin-top: 3px; }
 .interpretation-note {
   margin: -10px 0 18px;
   color: var(--text-dim);

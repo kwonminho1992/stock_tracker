@@ -9,7 +9,7 @@
 <body>
   <header class="site-header">
     <h1>시장 · 종목 이격도 트래커</h1>
-    <p class="subtitle">종가 기준 50일 이동평균 이격도로 단기 과열도를 점검합니다.</p>
+    <p class="subtitle">개별종목은 25일, 지수·ETF는 50일 이동평균 이격도로 단기 과열도를 점검합니다.</p>
     <p class="meta">
       <span id="updated-at">불러오는 중…</span>
       <span id="run-type" class="badge"></span>
@@ -18,13 +18,14 @@
 
   <main>
     <section class="legend" aria-label="구간 범례">
-      <span class="legend-item zone-overheat">과열 (≥130)</span>
+      <span class="legend-item zone-overheat">과열 (기준 이격도 ≥130)</span>
       <span class="legend-item zone-caution">경계 (120–130)</span>
       <span class="legend-item zone-normal">정상 (105–120)</span>
       <span class="legend-item zone-cooldown">과열해소 (≤105)</span>
     </section>
     <p class="interpretation-note">
-      고정 기준선은 시장/지수 비교용 참고선입니다. 개별종목은 변동성·추세가 달라 과열 기준이 종목마다 다르게 해석됩니다.
+      과열 판정 기준: 개별종목은 25일 이격도, 지수·ETF·섹터 대용 지표는 50일 이격도입니다.
+      고정 기준선은 빠른 비교용 참고선이며 개별종목의 변동성·추세에 따라 해석이 달라질 수 있습니다.
     </p>
 
     <section class="card table-section">
@@ -32,7 +33,7 @@
         <h2>최신 이격도</h2>
         <label class="sort-toggle">
           <input type="checkbox" id="sort-by-disparity" />
-          50일 이격도 높은 순 정렬
+          국가·유형 안에서 판정 이격도 높은 순
         </label>
       </div>
       <div class="table-wrap">
@@ -43,6 +44,7 @@
               <th class="num">종가</th>
               <th class="num">등락률</th>
               <th class="num">20일</th>
+              <th class="num">25일</th>
               <th class="num">50일</th>
               <th class="num">120일</th>
               <th>구간</th>
@@ -50,7 +52,7 @@
             </tr>
           </thead>
           <tbody id="latest-tbody">
-            <tr><td colspan="8" class="loading">데이터 불러오는 중…</td></tr>
+            <tr><td colspan="9" class="loading">데이터 불러오는 중…</td></tr>
           </tbody>
         </table>
       </div>
@@ -58,13 +60,13 @@
 
     <section class="card chart-section">
       <div class="section-controls">
-        <h2>50일 이격도 · 가격 추이 (최근 1년)</h2>
+        <h2>판정 이격도 · 가격 추이 (최근 1년)</h2>
         <select id="asset-select" aria-label="자산 선택"></select>
       </div>
       <div class="chart-wrap">
         <canvas id="disparity-chart"></canvas>
       </div>
-      <p class="chart-note">왼쪽 축: 이격도 · 오른쪽 축: 가격 · 점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
+      <p class="chart-note">왼쪽 축: 판정 이격도(개별종목 25일, 지수·ETF 50일) · 오른쪽 축: 가격 · 점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
     </section>
   </main>
 
@@ -72,8 +74,9 @@
     <p class="sources">
       데이터 출처: 국내 지수·개별종목 일부 = <strong>KRX (pykrx)</strong> ·
       해외/일본 지수·종목 및 일부 섹터지수 = <strong>Yahoo Finance (yfinance)</strong>.
-      종가 기준이며 평일 장마감 후(KST 16:20) 자동 갱신됩니다.
-      <strong>장중 수동 갱신</strong> 시에는 전 종목을 Yahoo Finance(yfinance) 지연시세로 계산합니다.
+      GitHub Actions에서 평일 1시간마다 자동 갱신됩니다.
+      <strong>장중/스케줄 갱신</strong> 시에는 국내 개별종목은 KRX 히스토리에 Yahoo Finance 최신가를 보강하고,
+      그 외 자산은 Yahoo Finance 지연시세로 계산합니다.
     </p>
     <p>
       본 페이지는 정보 제공용이며 투자 권유가 아닙니다.

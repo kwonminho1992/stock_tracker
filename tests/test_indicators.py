@@ -95,19 +95,44 @@ def test_round_or_none():
 def test_build_latest_record_fields():
     closes = list(range(100, 100 + 60))  # 60일치 단조 증가
     df = _make_df(closes)
-    df = add_moving_averages(df, [20, 50, 120])
-    df = add_disparities(df, [20, 50, 120])
-    asset = {"name": "테스트", "code": "T", "market": "KR", "asset_type": "kr_stock"}
+    df = add_moving_averages(df, [20, 25, 50, 120])
+    df = add_disparities(df, [20, 25, 50, 120])
+    asset = {
+        "name": "테스트",
+        "code": "T",
+        "market": "KR",
+        "country": "KR",
+        "sector": "반도체",
+        "asset_type": "kr_stock",
+        "yf_ticker": "T.KS",
+    }
     rec = build_latest_record(asset, df)
 
+    assert rec["ticker"] == "T.KS"
+    assert rec["country"] == "KR"
+    assert rec["sector"] == "반도체"
     assert rec["close"] is not None
+    assert rec["ma25"] is not None
     assert rec["ma50"] is not None
+    assert rec["disparity25"] is not None
     assert rec["disparity50"] is not None
+    assert rec["primary_window"] == 25
+    assert rec["primary_disparity"] == rec["disparity25"]
     # ma120 은 60행뿐이라 계산 불가 → None
     assert rec["ma120"] is None
     assert rec["disparity120"] is None
     # 모든 수치는 finite 이거나 None
-    for k in ["close", "ma20", "ma50", "disparity20", "disparity50", "change_pct"]:
+    for k in [
+        "close",
+        "ma20",
+        "ma25",
+        "ma50",
+        "disparity20",
+        "disparity25",
+        "disparity50",
+        "primary_disparity",
+        "change_pct",
+    ]:
         v = rec[k]
         assert v is None or math.isfinite(v)
     assert rec["zone"] in {"overheat", "caution", "normal", "cooldown"}
@@ -123,16 +148,35 @@ def test_build_latest_record_change_pct():
     assert rec["change_pct"] == pytest.approx(10.0)
 
 
+def test_build_latest_record_uses_previous_close_attr_for_change_pct():
+    df = _make_df([100, 110])
+    df.attrs["latest_previous_close"] = 105.0
+    df = add_moving_averages(df, [2])
+    df = add_disparities(df, [2])
+    asset = {"name": "T", "code": "T", "market": "KR", "asset_type": "kr_index"}
+    rec = build_latest_record(asset, df)
+    assert rec["change_pct"] == pytest.approx(round((110 / 105 - 1) * 100, 2))
+
+
 def test_build_history_records_skips_warmup():
     closes = list(range(100, 100 + 60))
     df = _make_df(closes)
-    df = add_moving_averages(df, [50])
-    df = add_disparities(df, [50])
+    df = add_moving_averages(df, [25, 50])
+    df = add_disparities(df, [25, 50])
     asset = {"name": "테스트", "code": "T", "market": "KR", "asset_type": "kr_stock"}
     hist = build_history_records(asset, df, history_days=3650)
-    # 60행 - 49(warmup) = 11개의 disparity50 존재
-    assert len(hist) == 11
+    # 개별종목은 25일 기준이므로 60행 - 24(warmup) = 36개의 기준 이격도 존재
+    assert len(hist) == 36
     for row in hist:
-        assert row["disparity50"] is not None
+        assert row["primary_disparity"] is not None
         assert row["zone"] is not None
-        assert set(row.keys()) == {"date", "close", "ma50", "disparity50", "zone"}
+        assert set(row.keys()) == {
+            "date",
+            "close",
+            "ma25",
+            "ma50",
+            "disparity25",
+            "disparity50",
+            "primary_disparity",
+            "zone",
+        }
