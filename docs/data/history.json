@@ -8,13 +8,6 @@
     "note": null,
     "data": [
       {
-        "date": "2025-06-24",
-        "close": 3103.64,
-        "ma50": 2664.91,
-        "disparity50": 116.46,
-        "zone": "normal"
-      },
-      {
         "date": "2025-06-25",
         "close": 3108.25,
         "ma50": 2681.21,
@@ -1721,6 +1714,13 @@
         "ma50": 7539.81,
         "disparity50": 112.35,
         "zone": "normal"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 8930.3,
+        "ma50": 7601.24,
+        "disparity50": 117.48,
+        "zone": "normal"
       }
     ]
   },
@@ -1732,13 +1732,6 @@
     "source": "yfinance",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 417.76,
-        "ma50": 354.83,
-        "disparity50": 117.73,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 419.51,
@@ -3427,11 +3420,11 @@
         "zone": "caution"
       },
       {
-        "date": "2026-06-24",
-        "close": 1369.62,
-        "ma50": 1154.62,
-        "disparity50": 118.62,
-        "zone": "normal"
+        "date": "2026-06-25",
+        "close": 1454.15,
+        "ma50": 1156.32,
+        "disparity50": 125.76,
+        "zone": "caution"
       }
     ]
   },
@@ -3443,13 +3436,6 @@
     "source": "yfinance",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 800.93,
-        "ma50": 735.12,
-        "disparity50": 108.95,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 798.21,
@@ -5157,6 +5143,13 @@
         "ma50": 1101.87,
         "disparity50": 82.52,
         "zone": "cooldown"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 887.81,
+        "ma50": 1097.75,
+        "disparity50": 80.88,
+        "zone": "cooldown"
       }
     ]
   },
@@ -5168,13 +5161,6 @@
     "source": "yfinance",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 38790.56,
-        "ma50": 36982.63,
-        "disparity50": 104.89,
-        "zone": "cooldown"
-      },
       {
         "date": "2025-06-25",
         "close": 38942.07,
@@ -6875,6 +6861,13 @@
         "ma50": 63518.96,
         "disparity50": 108.9,
         "zone": "normal"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 72366.34,
+        "ma50": 63827.81,
+        "disparity50": 113.38,
+        "zone": "normal"
       }
     ]
   },
@@ -6886,13 +6879,6 @@
     "source": "yfinance",
     "note": "KODEX 반도체 ETF, 국내 반도체 지수 대용",
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 36396.64,
-        "ma50": 31244.33,
-        "disparity50": 116.49,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 37300.82,
@@ -8600,6 +8586,13 @@
         "ma50": 145367.6,
         "disparity50": 117.94,
         "zone": "normal"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 182185.0,
+        "ma50": 146953.19,
+        "disparity50": 123.97,
+        "zone": "caution"
       }
     ]
   },
@@ -8611,13 +8604,6 @@
     "source": "yfinance",
     "note": "Nikkei Semiconductor Stock Index 추종 ETF",
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 1623.3,
-        "ma50": 1432.11,
-        "disparity50": 113.35,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 1661.93,
@@ -10311,6 +10297,13 @@
         "ma50": 4586.94,
         "disparity50": 127.99,
         "zone": "caution"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 6380.0,
+        "ma50": 4644.34,
+        "disparity50": 137.37,
+        "zone": "overheat"
       }
     ]
   },
@@ -12081,9 +12074,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 13497.54,
-        "ma50": 11834.55,
-        "disparity50": 114.05,
+        "close": 13458.2,
+        "ma50": 11833.76,
+        "disparity50": 113.73,
         "zone": "normal"
       }
     ]
@@ -12096,13 +12089,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 278500.0,
-        "ma50": 204864.0,
-        "disparity50": 135.94,
-        "zone": "overheat"
-      },
       {
         "date": "2025-06-25",
         "close": 286000.0,
@@ -13810,6 +13796,13 @@
         "ma50": 1840520.0,
         "disparity50": 140.18,
         "zone": "overheat"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 2917000.0,
+        "ma50": 1878320.0,
+        "disparity50": 155.3,
+        "zone": "overheat"
       }
     ]
   },
@@ -13821,13 +13814,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 60500.0,
-        "ma50": 56544.0,
-        "disparity50": 107.0,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 61300.0,
@@ -15535,6 +15521,13 @@
         "ma50": 280500.0,
         "disparity50": 121.39,
         "zone": "caution"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 358500.0,
+        "ma50": 283550.0,
+        "disparity50": 126.43,
+        "zone": "caution"
       }
     ]
   },
@@ -15546,13 +15539,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 136700.0,
-        "ma50": 123274.0,
-        "disparity50": 110.89,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 139100.0,
@@ -17260,6 +17246,13 @@
         "ma50": 1302600.0,
         "disparity50": 150.78,
         "zone": "overheat"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 1997000.0,
+        "ma50": 1331240.0,
+        "disparity50": 150.01,
+        "zone": "overheat"
       }
     ]
   },
@@ -17271,13 +17264,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 151700.0,
-        "ma50": 143520.0,
-        "disparity50": 105.7,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 153700.0,
@@ -18985,6 +18971,13 @@
         "ma50": 830050.0,
         "disparity50": 115.29,
         "zone": "normal"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 953000.0,
+        "ma50": 841510.0,
+        "disparity50": 113.25,
+        "zone": "normal"
       }
     ]
   },
@@ -18996,13 +18989,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 181000.0,
-        "ma50": 107962.0,
-        "disparity50": 167.65,
-        "zone": "overheat"
-      },
       {
         "date": "2025-06-25",
         "close": 192200.0,
@@ -20710,6 +20696,13 @@
         "ma50": 1122760.0,
         "disparity50": 160.23,
         "zone": "overheat"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 1899000.0,
+        "ma50": 1149380.0,
+        "disparity50": 165.22,
+        "zone": "overheat"
       }
     ]
   },
@@ -20721,13 +20714,6 @@
     "source": "pykrx_stock",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 162500.0,
-        "ma50": 137304.0,
-        "disparity50": 118.35,
-        "zone": "normal"
-      },
       {
         "date": "2025-06-25",
         "close": 165100.0,
@@ -22434,6 +22420,13 @@
         "close": 481500.0,
         "ma50": 396530.0,
         "disparity50": 121.43,
+        "zone": "caution"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 519000.0,
+        "ma50": 400860.0,
+        "disparity50": 129.47,
         "zone": "caution"
       }
     ]
@@ -24205,9 +24198,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 7397.97,
-        "ma50": 7349.8,
-        "disparity50": 100.66,
+        "close": 7358.22,
+        "ma50": 7349.01,
+        "disparity50": 100.13,
         "zone": "cooldown"
       }
     ]
@@ -25979,9 +25972,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 29467.74,
-        "ma50": 28755.71,
-        "disparity50": 102.48,
+        "close": 29220.06,
+        "ma50": 28750.76,
+        "disparity50": 101.63,
         "zone": "cooldown"
       }
     ]
@@ -27753,9 +27746,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 1055.78,
-        "ma50": 773.8,
-        "disparity50": 136.44,
+        "close": 1048.51,
+        "ma50": 773.66,
+        "disparity50": 135.53,
         "zone": "overheat"
       }
     ]
@@ -29527,9 +29520,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 200.32,
-        "ma50": 210.08,
-        "disparity50": 95.36,
+        "close": 199.0,
+        "ma50": 210.05,
+        "disparity50": 94.74,
         "zone": "cooldown"
       }
     ]
@@ -31301,9 +31294,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 1962.87,
-        "ma50": 1470.74,
-        "disparity50": 133.46,
+        "close": 1914.46,
+        "ma50": 1469.77,
+        "disparity50": 130.26,
         "zone": "overheat"
       }
     ]
@@ -31325,7 +31318,7 @@
       },
       {
         "date": "2025-06-25",
-        "close": 262.72,
+        "close": 262.73,
         "ma50": 221.06,
         "disparity50": 118.85,
         "zone": "normal"
@@ -33075,9 +33068,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 384.08,
-        "ma50": 412.06,
-        "disparity50": 93.21,
+        "close": 382.07,
+        "ma50": 412.02,
+        "disparity50": 92.73,
         "zone": "cooldown"
       }
     ]
@@ -34849,9 +34842,9 @@
       },
       {
         "date": "2026-06-24",
-        "close": 441.4,
-        "ma50": 409.63,
-        "disparity50": 107.75,
+        "close": 440.83,
+        "ma50": 409.62,
+        "disparity50": 107.62,
         "zone": "normal"
       }
     ]
@@ -34864,13 +34857,6 @@
     "source": "yfinance",
     "note": null,
     "data": [
-      {
-        "date": "2025-06-24",
-        "close": 2549.0,
-        "ma50": 2050.04,
-        "disparity50": 124.34,
-        "zone": "caution"
-      },
       {
         "date": "2025-06-25",
         "close": 2530.0,
@@ -36570,6 +36556,13 @@
         "close": 92500.0,
         "ma50": 59009.0,
         "disparity50": 156.76,
+        "zone": "overheat"
+      },
+      {
+        "date": "2026-06-25",
+        "close": 103850.0,
+        "ma50": 60483.2,
+        "disparity50": 171.7,
         "zone": "overheat"
       }
     ]
