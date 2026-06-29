@@ -131,11 +131,46 @@ def _extract_close_from_yf(df: pd.DataFrame, ticker: str) -> pd.Series:
     raise ValueError(f"[yfinance {ticker}] Close 컬럼 없음: {list(df.columns)}")
 
 
-def _fetch_yf(ticker: str) -> pd.DataFrame:
+def _attach_extended_quote(tk, out: pd.DataFrame) -> None:
+    """프리장/애프터마켓(시간외) 시세를 out.attrs 에 보강.
+
+    야후는 '미국 상장 종목'에만 pre/post 가격을 준다(지수·한/일/대만은 null).
+    이격도 계산에는 쓰지 않고, 화면 '가격' 표시용으로만 들고 간다.
+    실패해도 일봉 계산은 그대로 진행한다.
+    """
+    info = tk.info or {}
+    state = info.get("marketState")
+    out.attrs["market_state"] = state
+
+    session = price = change = None
+    if state == "PRE" and info.get("preMarketPrice") is not None:
+        session, price, change = (
+            "pre",
+            info.get("preMarketPrice"),
+            info.get("preMarketChangePercent"),
+        )
+    elif state in ("POST", "POSTPOST") and info.get("postMarketPrice") is not None:
+        session, price, change = (
+            "post",
+            info.get("postMarketPrice"),
+            info.get("postMarketChangePercent"),
+        )
+
+    if session and price is not None and pd.notna(price):
+        out.attrs["extended_session"] = session
+        out.attrs["extended_price"] = float(price)
+        # 야후 pre/postMarketChangePercent 는 이미 % 단위(직전 정규장 종가 대비).
+        if change is not None and pd.notna(change):
+            out.attrs["extended_change_pct"] = float(change)
+
+
+def _fetch_yf(ticker: str, want_extended: bool = False) -> pd.DataFrame:
     """yfinance 일봉을 받아 표준 DataFrame 으로 반환.
 
     장중에 호출하면 당일(진행중) 봉의 Close 가 '현재가(지연시세)'로 채워지므로,
     종가 모드와 장중 모드가 같은 함수를 공유한다.
+
+    want_extended=True 면(미국 상장 종목) 프리/애프터마켓 시세도 attrs 에 보강한다.
     """
     try:
         import yfinance as yf
@@ -159,12 +194,14 @@ def _fetch_yf(ticker: str) -> pd.DataFrame:
     out = _standardize(close, f"yfinance {ticker}")
 
     try:
+        tk = yf.Ticker(ticker)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            fast_info = yf.Ticker(ticker).fast_info
-            previous_close = fast_info.get("previousClose")
+            previous_close = tk.fast_info.get("previousClose")
         if previous_close is not None and pd.notna(previous_close):
             out.attrs["latest_previous_close"] = float(previous_close)
+        if want_extended:
+            _attach_extended_quote(tk, out)
     except Exception:
         # quote 메타데이터가 실패해도 일봉 계산은 계속 진행한다.
         pass
@@ -172,9 +209,19 @@ def _fetch_yf(ticker: str) -> pd.DataFrame:
     return out
 
 
+def wants_extended_quote(asset: Dict) -> bool:
+    """프리/애프터마켓 시세를 받을 대상인지: 미국 상장 개별종목(미국주 + TSMC ADR)."""
+    return asset.get("market") == "US" and str(asset.get("asset_type", "")).endswith(
+        "_stock"
+    )
+
+
 def fetch_us(asset: Dict) -> pd.DataFrame:
     """해외 지수/종목: yfinance 사용(yf_ticker 없으면 code 사용)."""
-    return _fetch_yf(asset.get("yf_ticker") or asset["code"])
+    return _fetch_yf(
+        asset.get("yf_ticker") or asset["code"],
+        want_extended=wants_extended_quote(asset),
+    )
 
 
 def fetch_kr_stock_intraday(asset: Dict) -> pd.DataFrame:
@@ -220,7 +267,7 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
             )
         if asset.get("asset_type") == "kr_stock":
             return fetch_kr_stock_intraday(asset)
-        return _fetch_yf(yf_ticker)
+        return _fetch_yf(yf_ticker, want_extended=wants_extended_quote(asset))
 
     source = asset.get("source")
     fetcher = _FETCHERS.get(source)

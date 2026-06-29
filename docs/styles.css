@@ -46,6 +46,23 @@ a { color: var(--accent); }
   border-radius: 999px;
   font-size: 0.75rem;
 }
+.refresh-btn {
+  margin-left: 10px;
+  padding: 3px 12px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
+.refresh-icon { display: inline-block; margin-right: 4px; }
+.refresh-btn.loading .refresh-icon { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
 
@@ -86,6 +103,26 @@ h2 { font-size: 1.1rem; margin: 0; }
   user-select: none;
 }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-bottom: 14px;
+}
+.filter-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+.chip:hover { color: var(--text); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 table {
@@ -125,6 +162,10 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
 
 .pos { color: var(--normal-fg); }
 .neg { color: var(--overheat-fg); }
+
+.ext-quote { font-size: 0.72rem; font-weight: 400; margin-top: 3px; }
+.ext-quote.ext-pre { color: var(--cooldown-fg); }
+.ext-quote.ext-post { color: #d6a3ff; }
 
 .asset-name { font-weight: 500; }
 .asset-source { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
@@ -182,7 +223,59 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   main { padding: 8px 14px 40px; }
   .card { padding: 12px; }
   .section-controls { margin-bottom: 10px; }
-  th, td { padding: 8px 8px; }
   .chart-wrap { height: 300px; }
   #asset-select { max-width: 50%; }
+
+  /* 최신 이격도 표: 좌우 스크롤 대신 자산별 카드(세로 스택)로 표시 */
+  .table-wrap { overflow-x: visible; }
+  #latest-table { min-width: 0; font-size: 0.92rem; }
+  #latest-table thead { display: none; }
+  #latest-table tbody,
+  #latest-table tr,
+  #latest-table td { display: block; width: 100%; }
+  #latest-table tr {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+  }
+  #latest-table tbody tr:hover { background: var(--panel-2); }
+  #latest-table td {
+    border: none;
+    white-space: normal;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    padding: 4px 0;
+    text-align: right;
+  }
+  /* 프리/애프터 줄은 숫자 아래로 내려 오른쪽 정렬 */
+  #latest-table td .ext-quote { flex-basis: 100%; text-align: right; margin-top: 0; }
+  /* 각 값 앞에 라벨(헤더 대체)을 붙이고, 값들은 오른쪽으로 묶는다 */
+  #latest-table td::before {
+    content: attr(data-label);
+    margin-right: auto;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+  }
+  /* 자산명 칸: 라벨 없이 카드 제목처럼 전체 폭 사용 */
+  #latest-table td.cell-name {
+    display: block;
+    text-align: left;
+    padding: 0 0 6px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  #latest-table td.cell-name::before { display: none; }
+  /* 모바일에서는 보조 지표(20·120일)와 빈 칸은 숨겨 카드 높이를 줄인다 */
+  #latest-table td.cell-secondary,
+  #latest-table td.cell-empty { display: none; }
+  /* 경고 칸은 내용이 있을 때만 보이도록 */
+  #latest-table td.cell-warn:empty { display: none; }
+  #latest-table td .basis-note { margin-top: 0; }
 }

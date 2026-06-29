@@ -13,6 +13,9 @@
     <p class="meta">
       <span id="updated-at">불러오는 중…</span>
       <span id="run-type" class="badge"></span>
+      <button id="refresh-btn" class="refresh-btn" type="button" title="최신 데이터 다시 불러오기">
+        <span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">새로고침</span>
+      </button>
     </p>
   </header>
 
@@ -36,12 +39,26 @@
           국가·유형 안에서 판정 이격도 높은 순
         </label>
       </div>
+      <div class="filter-bar">
+        <div class="filter-group" id="filter-country" role="group" aria-label="국가 필터">
+          <button type="button" class="chip active" data-country="ALL">전체</button>
+          <button type="button" class="chip" data-country="KR">한국</button>
+          <button type="button" class="chip" data-country="JP">일본</button>
+          <button type="button" class="chip" data-country="TW">대만</button>
+          <button type="button" class="chip" data-country="US">미국</button>
+        </div>
+        <div class="filter-group" id="filter-type" role="group" aria-label="유형 필터">
+          <button type="button" class="chip active" data-type="ALL">전체</button>
+          <button type="button" class="chip" data-type="index">지수·ETF</button>
+          <button type="button" class="chip" data-type="stock">개별종목</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table id="latest-table">
           <thead>
             <tr>
               <th>자산명</th>
-              <th class="num">종가</th>
+              <th class="num">현재가</th>
               <th class="num">등락률</th>
               <th class="num">20일</th>
               <th class="num">25일</th>
@@ -77,6 +94,8 @@
       GitHub Actions에서 평일 1시간마다 자동 갱신됩니다.
       <strong>장중/스케줄 갱신</strong> 시에는 국내 개별종목은 KRX 히스토리에 Yahoo Finance 최신가를 보강하고,
       그 외 자산은 Yahoo Finance 지연시세로 계산합니다.
+      미국 상장 종목(미국 개별주·TSMC ADR)은 해당 시간대일 때 <strong>프리장/애프터마켓</strong> 시세를
+      가격 옆에 함께 표시하며, 이 값은 <strong>이격도 계산에는 반영되지 않습니다</strong>.
     </p>
     <p>
       본 페이지는 정보 제공용이며 투자 권유가 아닙니다.

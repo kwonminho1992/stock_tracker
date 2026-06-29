@@ -2,8 +2,11 @@ name: update-market-disparity
 
 on:
   schedule:
-    # 평일 매시간 20분에 실행. GitHub 스케줄은 UTC 기준이며 지연될 수 있다.
+    # 평일 매시간 :20, :50 두 번 실행(이중화). GitHub 스케줄은 UTC 기준이며
+    # 고부하 시 지연/누락될 수 있어, 시간당 2회로 누락 위험을 줄인다.
+    # 값이 직전과 같으면 update.py 가 커밋하지 않으므로 중복 커밋은 생기지 않는다.
     - cron: "20 * * * 1-5"
+    - cron: "50 * * * 1-5"
   workflow_dispatch:
     inputs:
       run_type:

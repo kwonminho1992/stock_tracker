@@ -144,6 +144,11 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
     primary_disparity = round_or_none(_cell(last, f"disparity{primary_window}"))
     zone = classify_zone(primary_disparity)
 
+    # 프리장/애프터마켓 시세(미국 상장 종목만). 이격도 계산엔 미반영, 표시용.
+    extended_session = df.attrs.get("extended_session")
+    extended_price = round_or_none(df.attrs.get("extended_price"))
+    extended_change_pct = round_or_none(df.attrs.get("extended_change_pct"))
+
     return {
         "name": asset["name"],
         "code": asset["code"],
@@ -167,6 +172,10 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
         "primary_window": primary_window,
         "primary_disparity": primary_disparity,
         "change_pct": round_or_none(change_pct),
+        "market_state": df.attrs.get("market_state"),
+        "extended_session": extended_session,
+        "extended_price": extended_price,
+        "extended_change_pct": extended_change_pct,
         "zone": zone,
         "zone_label": zone_label(zone),
         "is_stale": False,
