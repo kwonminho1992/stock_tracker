@@ -44,7 +44,7 @@ ASSET = {
     "code": "TEST",
     "market": "KR",
     "asset_type": "kr_stock",
-    "source": "pykrx_stock",
+    "source": "krx_stock",
 }
 
 
@@ -127,7 +127,7 @@ def test_intraday_requires_yf_ticker():
 
     no_ticker = {
         "name": "코스피", "code": "1001", "market": "KR",
-        "asset_type": "kr_index", "source": "pykrx_index",
+        "asset_type": "kr_index", "source": "krx_index",
     }
     with pytest.raises(ValueError):
         fetch_asset(no_ticker, run_type="intraday")
@@ -141,7 +141,7 @@ def test_process_asset_intraday_missing_ticker_isolated():
     """장중 모드 + yf_ticker 미설정 → 예외 없이 error 레코드로 격리."""
     asset = {
         "name": "코스피", "code": "1001", "market": "KR",
-        "asset_type": "kr_index", "source": "pykrx_index",
+        "asset_type": "kr_index", "source": "krx_index",
     }
     latest, hist = process_asset(asset, run_type="intraday")
     assert "error" in latest

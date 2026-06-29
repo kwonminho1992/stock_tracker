@@ -69,6 +69,11 @@ def make_error_record(asset: Dict, message: str) -> Dict:
         "asset_type": asset.get("asset_type", "?"),
         "source": asset.get("source"),
         "note": asset.get("note"),
+        "sort_order": asset.get("sort_order", 9999),
+        "ai_group": asset.get("ai_group"),
+        "ai_subgroup": asset.get("ai_subgroup"),
+        "product_group": asset.get("product_group"),
+        "exposure_type": asset.get("exposure_type"),
         "error": message,
     }
 
@@ -136,7 +141,7 @@ def process_asset(
         latest = build_latest_record(asset, df)
         if run_type == "intraday":
             latest["source"] = (
-                "pykrx_stock+yfinance"
+                "krx+yfinance"
                 if asset.get("asset_type") == "kr_stock"
                 else "yfinance"
             )
@@ -164,11 +169,15 @@ def process_asset(
             "sector": asset.get("sector"),
             "asset_type": asset["asset_type"],
             "source": (
-                "pykrx_stock+yfinance"
+                "krx+yfinance"
                 if run_type == "intraday" and asset.get("asset_type") == "kr_stock"
                 else "yfinance" if run_type == "intraday" else asset.get("source")
             ),
             "note": asset.get("note"),
+            "sort_order": asset.get("sort_order", 9999),
+            "ai_group": asset.get("ai_group"),
+            "product_group": asset.get("product_group"),
+            "exposure_type": asset.get("exposure_type"),
             "primary_window": latest.get("primary_window"),
             "data": history,
         }
@@ -301,7 +310,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--run-type",
         choices=["close", "intraday"],
         default="close",
-        help="close=종가(국내 pykrx), intraday=장중(국내 종목 pykrx+yfinance, 그 외 yfinance)",
+        help="close=종가(국내 FDR/KRX), intraday=장중(국내 종목 FDR+yfinance, 그 외 yfinance)",
     )
     args = parser.parse_args(argv)
     run_type = args.run_type

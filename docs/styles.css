@@ -122,6 +122,64 @@ h2 { font-size: 1.1rem; margin: 0; }
 }
 .chip:hover { color: var(--text); }
 .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filter-label { font-size: 0.78rem; color: var(--text-dim); align-self: center; margin-right: 2px; }
+.filter-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.filter-select select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+/* 그룹 구분 헤더 행 */
+#latest-table tr.group-header td {
+  background: var(--panel-2);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+/* 국가·노출도 태그 */
+.country-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  border: 1px solid var(--border);
+}
+.c-KR { color: #6fb6e8; }
+.c-US { color: #6fd99a; }
+.c-JP { color: #ff7b8a; }
+.c-TW { color: #ffc15e; }
+.c-EU { color: #d6a3ff; }
+.exp-tag {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 0.66rem;
+  border: 1px solid currentColor;
+}
+.exp-CORE { color: var(--normal-fg); }
+.exp-SECONDARY { color: var(--caution-fg); }
+.exp-INDIRECT { color: var(--cooldown-fg); }
+.exp-BENCHMARK { color: var(--text-dim); }
+.exp-HIGH_RISK { color: var(--overheat-fg); }
+
+.asset-sub { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
+#latest-table code { font-size: 0.78rem; color: var(--text-dim); }
+td.col-order { color: var(--text-dim); font-size: 0.78rem; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
@@ -129,7 +187,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  min-width: 760px;
+  min-width: 1080px;
 }
 th, td {
   padding: 9px 10px;
@@ -272,9 +330,17 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
     border-bottom: 1px solid var(--border);
   }
   #latest-table td.cell-name::before { display: none; }
-  /* 모바일에서는 보조 지표(20·120일)와 빈 칸은 숨겨 카드 높이를 줄인다 */
+  /* 모바일에서는 보조 칸(정렬#·빈 칸)은 숨겨 카드 높이를 줄인다 */
   #latest-table td.cell-secondary,
   #latest-table td.cell-empty { display: none; }
+  /* 그룹 헤더는 카드 묶음 위 구분선처럼 전체 폭 사용 */
+  #latest-table tr.group-header { border: none; background: transparent; padding: 0; margin: 6px 0 4px; }
+  #latest-table tr.group-header td {
+    display: block;
+    border-radius: 8px;
+    white-space: normal;
+  }
+  #latest-table tr.group-header td::before { display: none; }
   /* 경고 칸은 내용이 있을 때만 보이도록 */
   #latest-table td.cell-warn:empty { display: none; }
   #latest-table td .basis-note { margin-top: 0; }

@@ -1,7 +1,7 @@
 # market-disparity-tracker 의존성
 # Python 3.11 기준
 pandas>=2.0,<3.0
-pykrx>=1.0.45
+finance-datareader>=0.9.90   # 국내(KRX) 일봉 수집 (pykrx 대체)
 yfinance>=0.2.40
 lxml>=4.9          # yfinance 일부 경로에서 필요
 pytest>=7.4        # 테스트 (CI에서 자동 실행, 없으면 스킵)

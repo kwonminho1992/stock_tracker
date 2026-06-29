@@ -13,8 +13,32 @@ let chart = null;
 let sortByDisparity = false;
 let selectedCode = null;
 let lastLoadAt = 0;
-let filterCountry = "ALL"; // ALL | KR | JP | TW | US
-let filterType = "ALL"; // ALL | index | stock
+let filterCountry = "ALL"; // ALL | KR | US | JP | TW | EU
+let filterZone = "ALL"; // ALL | overheat | caution | normal | cooldown
+let filterGroup = "ALL"; // ALL | 00_INDEX | 01_AI_COMPUTE_ASIC | ...
+let filterExposure = "ALL"; // ALL | CORE | SECONDARY | INDIRECT | BENCHMARK | HIGH_RISK
+
+// 화면 표시용 라벨
+const AI_GROUP_LABELS = {
+  "00_INDEX": "지수·환율·금리",
+  "01_AI_COMPUTE_ASIC": "AI 연산·ASIC",
+  "02_MEMORY_STORAGE": "메모리·스토리지",
+  "03_FOUNDRY_MANUFACTURING": "파운드리·제조",
+  "04_EQUIPMENT_TEST": "장비·테스트",
+  "05_PACKAGING_SUBSTRATE_PCB": "패키징·기판·PCB",
+  "06_MLCC_PASSIVE_COMPONENT": "MLCC·수동부품",
+  "07_NETWORK_OPTICAL": "네트워크·광",
+  "08_POWER_COOLING_GRID": "전력·냉각·그리드",
+  "09_AI_SERVER_ODM": "AI 서버·ODM",
+  "10_INDIRECT_HOLDING": "간접·지주",
+};
+const EXPOSURE_LABELS = {
+  CORE: "핵심",
+  SECONDARY: "2차",
+  INDIRECT: "간접",
+  BENCHMARK: "벤치마크",
+  HIGH_RISK: "고위험",
+};
 
 // 탭이 떠 있는 동안 주기적으로 최신 커밋 데이터를 다시 받아온다.
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
@@ -39,7 +63,7 @@ async function init() {
 }
 
 function setupFilters() {
-  const wire = (groupId, attr, set) => {
+  const wireChips = (groupId, attr, set) => {
     const group = document.getElementById(groupId);
     if (!group) return;
     group.addEventListener("click", (e) => {
@@ -52,19 +76,28 @@ function setupFilters() {
       renderTable();
     });
   };
-  wire("filter-country", "data-country", (v) => (filterCountry = v));
-  wire("filter-type", "data-type", (v) => (filterType = v));
+  const wireSelect = (id, set) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("change", (e) => {
+      set(e.target.value);
+      renderTable();
+    });
+  };
+  wireChips("filter-country", "data-country", (v) => (filterCountry = v));
+  wireChips("filter-zone", "data-zone", (v) => (filterZone = v));
+  wireSelect("filter-group-sel", (v) => (filterGroup = v));
+  wireSelect("filter-exposure", (v) => (filterExposure = v));
 }
 
 function matchesFilter(a) {
   if (filterCountry !== "ALL" && (a.country || a.market) !== filterCountry) {
     return false;
   }
-  if (filterType !== "ALL") {
-    const isStock = String(a.asset_type || "").endsWith("_stock");
-    if (filterType === "stock" && !isStock) return false;
-    if (filterType === "index" && isStock) return false;
-  }
+  if (filterGroup !== "ALL" && a.ai_group !== filterGroup) return false;
+  if (filterExposure !== "ALL" && a.exposure_type !== filterExposure) return false;
+  // 과열 상태 필터: 에러/무구간 자산은 특정 상태 필터 시 제외.
+  if (filterZone !== "ALL" && a.zone !== filterZone) return false;
   return true;
 }
 
@@ -117,7 +150,7 @@ async function loadData() {
     renderChart();
   } catch (err) {
     document.getElementById("latest-tbody").innerHTML =
-      `<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
+      `<tr><td colspan="13" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
         String(err)
       )}</td></tr>`;
   }
@@ -155,23 +188,29 @@ function renderTable() {
   }));
   if (all.length === 0) {
     tbody.innerHTML =
-      `<tr><td colspan="9" class="loading">표시할 데이터가 없습니다.</td></tr>`;
+      `<tr><td colspan="13" class="loading">표시할 데이터가 없습니다.</td></tr>`;
     return;
   }
   const assets = all.filter(matchesFilter);
   if (assets.length === 0) {
     tbody.innerHTML =
-      `<tr><td colspan="9" class="loading">해당 조건의 자산이 없습니다.</td></tr>`;
+      `<tr><td colspan="13" class="loading">해당 조건의 자산이 없습니다.</td></tr>`;
     return;
   }
 
-  if (sortByDisparity) {
-    assets.sort(groupedAssetCompare(true));
-  } else {
-    assets.sort(groupedAssetCompare(false));
-  }
+  assets.sort(groupedAssetCompare(sortByDisparity));
 
-  tbody.innerHTML = assets.map(rowHtml).join("");
+  // 그룹이 바뀔 때마다 구분용 헤더 행을 끼워 넣어 "한눈에" 묶음 보기.
+  let lastGroup = null;
+  const rows = [];
+  assets.forEach((a) => {
+    if (a.ai_group !== lastGroup) {
+      lastGroup = a.ai_group;
+      rows.push(groupHeaderHtml(lastGroup));
+    }
+    rows.push(rowHtml(a));
+  });
+  tbody.innerHTML = rows.join("");
 
   Array.from(tbody.querySelectorAll("tr[data-code]")).forEach((tr) => {
     tr.addEventListener("click", () => {
@@ -193,44 +232,58 @@ function disparityForSort(a) {
 }
 
 function groupedAssetCompare(sortByMetric) {
+  // 1차: AI 병목그룹(00_INDEX → 10_INDIRECT) / 2차: 그룹 내 sort_order
+  // (sortByMetric=true 면 그룹 안에서 판정 이격도 높은 순으로 재정렬)
   return (a, b) => {
-    const countryDiff = countryRank(a) - countryRank(b);
-    if (countryDiff !== 0) return countryDiff;
-    const typeDiff = assetTypeRank(a) - assetTypeRank(b);
-    if (typeDiff !== 0) return typeDiff;
+    const ga = a.ai_group || "99";
+    const gb = b.ai_group || "99";
+    if (ga !== gb) return ga < gb ? -1 : 1;
     if (sortByMetric) {
       const metricDiff = disparityForSort(b) - disparityForSort(a);
       if (metricDiff !== 0) return metricDiff;
     }
+    const soDiff = (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
+    if (soDiff !== 0) return soDiff;
     return (a._order || 0) - (b._order || 0);
   };
 }
 
-function countryRank(a) {
-  const order = { KR: 0, JP: 1, TW: 2, US: 3 };
-  const country = a.country || a.market || "";
-  return Object.prototype.hasOwnProperty.call(order, country) ? order[country] : 99;
+function groupHeaderHtml(group) {
+  const label = AI_GROUP_LABELS[group] || group || "기타";
+  const num = String(group || "").slice(0, 2);
+  return `<tr class="group-header"><td colspan="13">${escapeHtml(
+    num
+  )} · ${escapeHtml(label)}</td></tr>`;
 }
 
-function assetTypeRank(a) {
-  const t = String(a.asset_type || "");
-  if (t.endsWith("_index")) return 0;
-  if (t === "semiconductor_index") return 1;
-  if (t.endsWith("_stock")) return 2;
-  return 9;
+function exposureTag(a) {
+  if (!a.exposure_type) return "";
+  const label = EXPOSURE_LABELS[a.exposure_type] || a.exposure_type;
+  return `<span class="exp-tag exp-${escapeHtml(
+    a.exposure_type
+  )}">${escapeHtml(label)}</span>`;
+}
+
+function countryCellHtml(a) {
+  const country = a.country || a.market || "";
+  return `<span class="country-tag c-${escapeHtml(country)}">${escapeHtml(
+    countryLabel(country)
+  )}</span>`;
 }
 
 function rowHtml(a) {
-  // 데이터 오류 자산
+  // 데이터 오류 자산 (4칸 + colspan 9 = 13)
   if (a.error) {
     return `<tr class="row-error" data-code="${escapeHtml(a.code)}">
-      <td class="cell-name"><div class="asset-name">${escapeHtml(a.name)}</div><div class="asset-source">${escapeHtml(
-        sourceLabel(a)
-      )}</div>${assetNotesHtml(a)}</td>
-      <td colspan="7" data-label="오류"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
+      <td class="num col-order cell-secondary" data-label="#">${a.sort_order ?? ""}</td>
+      <td data-label="국가">${countryCellHtml(a)}</td>
+      <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
+        a.name
+      )}</div>${exposureTag(a)}</td>
+      <td data-label="티커"><code>${escapeHtml(a.ticker || a.code)}</code></td>
+      <td colspan="9" data-label="오류"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
         a.error
       )}</td>
-      <td class="cell-empty"></td>
     </tr>`;
   }
 
@@ -241,26 +294,40 @@ function rowHtml(a) {
     change == null ? "-" : `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
 
   const warns = [];
-  if (a.is_stale) warns.push(`<span class="warn-tag warn-stale">데이터 오래됨</span>`);
+  if (a.is_stale) warns.push(`<span class="warn-tag warn-stale">오래됨</span>`);
   if (a.is_suspicious)
-    warns.push(`<span class="warn-tag warn-suspicious">값 확인 필요</span>`);
+    warns.push(`<span class="warn-tag warn-suspicious">확인필요</span>`);
+
+  const groupCell = `<div>${escapeHtml(
+    AI_GROUP_LABELS[a.ai_group] || a.ai_group || "-"
+  )}</div><div class="asset-sub">${escapeHtml(a.ai_subgroup || "")}</div>`;
 
   return `<tr data-code="${escapeHtml(a.code)}" title="${escapeHtml(
-    a.warning || ""
+    a.note || a.warning || ""
   )}">
-    <td class="cell-name"><div class="asset-name">${escapeHtml(a.name)}</div><div class="asset-source">${escapeHtml(
-      sourceLabel(a)
-    )}</div>${assetNotesHtml(a)}</td>
+    <td class="num col-order cell-secondary" data-label="#">${a.sort_order ?? ""}</td>
+    <td data-label="국가">${countryCellHtml(a)}</td>
+    <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
+      a.name
+    )}</div><div class="asset-sub">${escapeHtml(a.sector || "")}</div>${exposureTag(a)}</td>
+    <td data-label="티커"><code>${escapeHtml(a.ticker || a.code)}</code></td>
+    <td data-label="AI 병목그룹">${groupCell}</td>
+    <td data-label="주요 제품군">${escapeHtml(a.product_group || "")}</td>
     <td class="num" data-label="현재가">${fmtNum(a.close)}${extendedHtml(a)}</td>
     <td class="num ${changeCls}" data-label="등락률">${changeTxt}</td>
-    <td class="num cell-secondary" data-label="20일">${fmtDisp(a.disparity20)}</td>
-    <td class="num ${primaryMetricClass(a, 25)}" data-label="25일">${fmtDisp(a.disparity25)}</td>
-    <td class="num ${primaryMetricClass(a, 50)}" data-label="50일">${fmtDisp(a.disparity50)}</td>
-    <td class="num cell-secondary" data-label="120일">${fmtDisp(a.disparity120)}</td>
-    <td data-label="구간"><span class="zone-pill ${zoneMeta.cls}">${escapeHtml(
+    <td class="num ${primaryMetricClass(a, 25)}" data-label="25일">${fmtDisp(
+      a.disparity25
+    )}</td>
+    <td class="num ${primaryMetricClass(a, 50)}" data-label="50일">${fmtDisp(
+      a.disparity50
+    )}</td>
+    <td class="num" data-label="120일">${fmtDisp(a.disparity120)}</td>
+    <td data-label="과열"><span class="zone-pill ${zoneMeta.cls}">${escapeHtml(
       zoneMeta.label
-    )}</span><div class="basis-note">${basisLabel(a)}</div></td>
-    <td class="cell-warn" data-label="경고">${warns.join(" ")}</td>
+    )}</span></td>
+    <td data-label="최신성"><div class="asset-sub">${escapeHtml(
+      a.date || ""
+    )}</div>${warns.join(" ")}</td>
   </tr>`;
 }
 

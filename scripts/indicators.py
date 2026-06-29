@@ -159,6 +159,12 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
         "asset_type": asset["asset_type"],
         "source": asset.get("source"),
         "note": asset.get("note"),
+        # AI 병목 밸류체인 분류(화면 정렬·필터·표시용)
+        "sort_order": asset.get("sort_order", 9999),
+        "ai_group": asset.get("ai_group"),
+        "ai_subgroup": asset.get("ai_subgroup"),
+        "product_group": asset.get("product_group"),
+        "exposure_type": asset.get("exposure_type"),
         "date": pd.Timestamp(last_date).strftime("%Y-%m-%d"),
         "close": close,
         "ma20": round_or_none(_cell(last, "ma20")),

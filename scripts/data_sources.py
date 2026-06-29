@@ -4,7 +4,7 @@
   - index : DatetimeIndex (tz-naive), name="date", 오름차순
   - column: 단일 "close" (float)
 
-pykrx / yfinance 는 함수 내부에서 lazy import 한다.
+FinanceDataReader / yfinance 는 함수 내부에서 lazy import 한다.
 → 라이브러리 미설치 환경에서도 이 모듈 import 자체는 실패하지 않고,
   계산/직렬화 단위테스트를 돌릴 수 있다.
 """
@@ -18,7 +18,7 @@ import pandas as pd
 
 from config import KR_LOOKBACK_DAYS, US_PERIOD
 
-# pykrx(한글) / yfinance(영문) 양쪽을 모두 커버하는 종가 컬럼 후보.
+# KRX(한글 '종가') / yfinance·FDR(영문 'Close') 양쪽을 커버하는 종가 컬럼 후보.
 CLOSE_CANDIDATES = ["종가", "Close", "close", "CLOSE"]
 
 
@@ -58,7 +58,7 @@ def _kr_date_range() -> Tuple[str, str]:
 
 
 def _extract_close_column(df: pd.DataFrame, source: str) -> pd.Series:
-    """pykrx 결과(단일 인덱스 컬럼)에서 종가 컬럼을 찾는다."""
+    """결과 DataFrame 에서 종가 컬럼을 찾는다(KRX '종가' / yfinance·FDR 'Close')."""
     for col in CLOSE_CANDIDATES:
         if col in df.columns:
             return df[col]
@@ -68,44 +68,36 @@ def _extract_close_column(df: pd.DataFrame, source: str) -> pd.Series:
     )
 
 
-def fetch_kr_index(asset: Dict) -> pd.DataFrame:
-    """국내 지수: pykrx get_index_ohlcv 사용."""
-    try:
-        from pykrx import stock
-    except ImportError as e:  # noqa: F841
-        raise ImportError("pykrx 가 설치되지 않았습니다. `pip install pykrx`") from e
+def _fetch_fdr(symbol: str) -> pd.DataFrame:
+    """FinanceDataReader 로 일봉을 받아 표준 DataFrame(date index, close)으로 반환.
 
-    fromdate, todate = _kr_date_range()
-    getter = getattr(stock, "get_index_ohlcv", None) or getattr(
-        stock, "get_index_ohlcv_by_date"
-    )
-    df = getter(fromdate, todate, asset["code"])
+    국내(KRX) 종목·지수를 안정적으로 커버한다. 비조정가(실제 체결가) 기준이라
+    기존 pykrx 와 동일한 기준선을 유지한다(분할조정 불일치 없음).
+    """
+    try:
+        import FinanceDataReader as fdr
+    except ImportError as e:
+        raise ImportError(
+            "FinanceDataReader 가 설치되지 않았습니다. `pip install finance-datareader`"
+        ) from e
+
+    fromdate, _ = _kr_date_range()  # YYYYMMDD
+    start = f"{fromdate[:4]}-{fromdate[4:6]}-{fromdate[6:]}"
+    df = fdr.DataReader(symbol, start)
     if df is None or len(df) == 0:
-        raise ValueError(
-            f"[pykrx index {asset['code']}] 빈 데이터 (코드/기간 확인: {fromdate}~{todate})"
-        )
-    close = _extract_close_column(df, f"pykrx index {asset['code']}")
-    return _standardize(close, f"pykrx index {asset['code']}")
+        raise ValueError(f"[FDR {symbol}] 빈 데이터 (심볼/네트워크 확인)")
+    close = _extract_close_column(df, f"FDR {symbol}")
+    return _standardize(close, f"FDR {symbol}")
+
+
+def fetch_kr_index(asset: Dict) -> pd.DataFrame:
+    """국내 지수: FinanceDataReader 사용(심볼은 ^ 없이 KS11/KQ11 등)."""
+    return _fetch_fdr(str(asset["code"]).lstrip("^"))
 
 
 def fetch_kr_stock(asset: Dict) -> pd.DataFrame:
-    """국내 개별종목/ETF: pykrx get_market_ohlcv 사용."""
-    try:
-        from pykrx import stock
-    except ImportError as e:
-        raise ImportError("pykrx 가 설치되지 않았습니다. `pip install pykrx`") from e
-
-    fromdate, todate = _kr_date_range()
-    getter = getattr(stock, "get_market_ohlcv", None) or getattr(
-        stock, "get_market_ohlcv_by_date"
-    )
-    df = getter(fromdate, todate, asset["code"])
-    if df is None or len(df) == 0:
-        raise ValueError(
-            f"[pykrx stock {asset['code']}] 빈 데이터 (코드/기간 확인: {fromdate}~{todate})"
-        )
-    close = _extract_close_column(df, f"pykrx stock {asset['code']}")
-    return _standardize(close, f"pykrx stock {asset['code']}")
+    """국내 개별종목: FinanceDataReader 사용(6자리 종목코드)."""
+    return _fetch_fdr(asset["code"])
 
 
 def _extract_close_from_yf(df: pd.DataFrame, ticker: str) -> pd.Series:
@@ -225,10 +217,10 @@ def fetch_us(asset: Dict) -> pd.DataFrame:
 
 
 def fetch_kr_stock_intraday(asset: Dict) -> pd.DataFrame:
-    """국내 개별종목 장중 모드: pykrx 종가 히스토리에 yfinance 최신가만 보강.
+    """국내 개별종목 장중 모드: FDR(KRX) 종가 히스토리에 yfinance 최신가만 보강.
 
     yfinance 국내 종목 히스토리는 일부 날짜가 KRX 종가와 어긋나는 경우가 있어,
-    이동평균 계산용 과거 데이터는 pykrx 를 우선한다. 단, 장중에는 pykrx 에 당일 봉이
+    이동평균 계산용 과거 데이터는 FDR(KRX) 를 우선한다. 단, 장중에는 FDR 에 당일 봉이
     없을 수 있으므로 yfinance 최신 행이 더 최신 날짜일 때만 추가한다.
     """
     base = fetch_kr_stock(asset)
@@ -246,8 +238,8 @@ def fetch_kr_stock_intraday(asset: Dict) -> pd.DataFrame:
 
 
 _FETCHERS = {
-    "pykrx_index": fetch_kr_index,
-    "pykrx_stock": fetch_kr_stock,
+    "krx_index": fetch_kr_index,
+    "krx_stock": fetch_kr_stock,
     "yfinance": fetch_us,
 }
 
@@ -255,8 +247,8 @@ _FETCHERS = {
 def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
     """run_type 과 asset['source'] 에 따라 적절한 fetch 함수로 라우팅.
 
-    - run_type="close"    : 종가 모드. 국내=pykrx, 해외=yfinance.
-    - run_type="intraday" : 장중 모드. 국내 개별종목은 pykrx 종가 히스토리에
+    - run_type="close"    : 종가 모드. 국내=FDR(KRX), 해외=yfinance.
+    - run_type="intraday" : 장중 모드. 국내 개별종목은 FDR(KRX) 종가 히스토리에
       yfinance 최신가를 보강하고, 나머지는 yf_ticker 로 yfinance(지연시세) 조회.
     """
     if run_type == "intraday":
