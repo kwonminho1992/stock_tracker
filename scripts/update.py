@@ -178,6 +178,7 @@ def process_asset(
             "ai_group": asset.get("ai_group"),
             "product_group": asset.get("product_group"),
             "exposure_type": asset.get("exposure_type"),
+            "disparity_meaningful": asset.get("disparity_meaningful", True),
             "primary_window": latest.get("primary_window"),
             "data": history,
         }

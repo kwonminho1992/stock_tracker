@@ -13,6 +13,7 @@
     "ai_group": "00_INDEX",
     "product_group": "한국 종합주가지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -2471,6 +2472,7 @@
     "ai_group": "00_INDEX",
     "product_group": "코스피 대형주 지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -4929,6 +4931,7 @@
     "ai_group": "00_INDEX",
     "product_group": "코스닥 종합지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -7387,6 +7390,7 @@
     "ai_group": "00_INDEX",
     "product_group": "일본 대표 지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -9835,6 +9839,7 @@
     "ai_group": "00_INDEX",
     "product_group": "대만 가권 종합지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -12283,6 +12288,7 @@
     "ai_group": "00_INDEX",
     "product_group": "미국 대형주 지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -14787,12 +14793,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 7402.9,
-        "ma25": 7462.82,
-        "ma50": 7370.66,
-        "disparity25": 99.2,
-        "disparity50": 100.44,
-        "primary_disparity": 100.44,
+        "close": 7374.94,
+        "ma25": 7461.7,
+        "ma50": 7370.1,
+        "disparity25": 98.84,
+        "disparity50": 100.07,
+        "primary_disparity": 100.07,
         "zone": "cooldown"
       }
     ]
@@ -14811,6 +14817,7 @@
     "ai_group": "00_INDEX",
     "product_group": "나스닥 대형 기술주",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -17315,12 +17322,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 29349.16,
-        "ma25": 29785.0,
-        "ma50": 28941.32,
-        "disparity25": 98.54,
-        "disparity50": 101.41,
-        "primary_disparity": 101.41,
+        "close": 29165.29,
+        "ma25": 29777.64,
+        "ma50": 28937.64,
+        "disparity25": 97.94,
+        "disparity50": 100.79,
+        "primary_disparity": 100.79,
         "zone": "cooldown"
       }
     ]
@@ -17339,6 +17346,7 @@
     "ai_group": "00_INDEX",
     "product_group": "필라델피아 반도체 지수",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
       {
@@ -19843,12 +19851,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 13142.51,
-        "ma25": 13251.05,
-        "ma50": 12083.65,
-        "disparity25": 99.18,
-        "disparity50": 108.76,
-        "primary_disparity": 108.76,
+        "close": 12951.18,
+        "ma25": 13243.4,
+        "ma50": 12079.82,
+        "disparity25": 97.79,
+        "disparity50": 107.21,
+        "primary_disparity": 107.21,
         "zone": "normal"
       }
     ]
@@ -19867,6 +19875,7 @@
     "ai_group": "00_INDEX",
     "product_group": "S&P500 변동성 지수(공포)",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": false,
     "primary_window": 50,
     "data": [
       {
@@ -22381,12 +22390,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 18.23,
-        "ma25": 17.69,
-        "ma50": 17.8,
-        "disparity25": 103.05,
-        "disparity50": 102.4,
-        "primary_disparity": 102.4,
+        "close": 18.38,
+        "ma25": 17.7,
+        "ma50": 17.81,
+        "disparity25": 103.87,
+        "disparity50": 103.22,
+        "primary_disparity": 103.22,
         "zone": "cooldown"
       }
     ]
@@ -22405,6 +22414,7 @@
     "ai_group": "00_INDEX",
     "product_group": "미국 10년물 국채 금리",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": false,
     "primary_window": 50,
     "data": [
       {
@@ -24912,9 +24922,9 @@
         "close": 4.37,
         "ma25": 4.47,
         "ma50": 4.44,
-        "disparity25": 97.81,
-        "disparity50": 98.42,
-        "primary_disparity": 98.42,
+        "disparity25": 97.74,
+        "disparity50": 98.35,
+        "primary_disparity": 98.35,
         "zone": "cooldown"
       }
     ]
@@ -24933,6 +24943,7 @@
     "ai_group": "00_INDEX",
     "product_group": "USD/KRW",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": false,
     "primary_window": 50,
     "data": [
       {
@@ -27517,12 +27528,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 1541.78,
-        "ma25": 1524.06,
-        "ma50": 1502.84,
-        "disparity25": 101.16,
-        "disparity50": 102.59,
-        "primary_disparity": 102.59,
+        "close": 1544.08,
+        "ma25": 1524.15,
+        "ma50": 1502.89,
+        "disparity25": 101.31,
+        "disparity50": 102.74,
+        "primary_disparity": 102.74,
         "zone": "cooldown"
       }
     ]
@@ -27541,6 +27552,7 @@
     "ai_group": "00_INDEX",
     "product_group": "USD/JPY",
     "exposure_type": "BENCHMARK",
+    "disparity_meaningful": false,
     "primary_window": 50,
     "data": [
       {
@@ -30125,12 +30137,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 161.93,
+        "close": 161.9,
         "ma25": 160.4,
         "ma50": 159.4,
-        "disparity25": 100.95,
-        "disparity50": 101.59,
-        "primary_disparity": 101.59,
+        "disparity25": 100.93,
+        "disparity50": 101.57,
+        "primary_disparity": 101.57,
         "zone": "cooldown"
       }
     ]
@@ -30149,6 +30161,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "데이터센터 GPU/AI 가속기",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -32653,12 +32666,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 193.11,
-        "ma25": 208.14,
-        "ma50": 209.82,
-        "disparity25": 92.78,
-        "disparity50": 92.04,
-        "primary_disparity": 92.78,
+        "close": 191.92,
+        "ma25": 208.09,
+        "ma50": 209.79,
+        "disparity25": 92.23,
+        "disparity50": 91.48,
+        "primary_disparity": 92.23,
         "zone": "cooldown"
       }
     ]
@@ -32677,6 +32690,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "GPU·CPU·AI 가속기",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -35181,12 +35195,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 513.73,
-        "ma25": 509.87,
-        "ma50": 443.83,
-        "disparity25": 100.76,
-        "disparity50": 115.75,
-        "primary_disparity": 100.76,
+        "close": 505.46,
+        "ma25": 509.54,
+        "ma50": 443.66,
+        "disparity25": 99.2,
+        "disparity50": 113.93,
+        "primary_disparity": 99.2,
         "zone": "cooldown"
       }
     ]
@@ -35205,6 +35219,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "커스텀 AI ASIC·AI 네트워킹",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -37709,12 +37724,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 369.42,
-        "ma25": 404.62,
-        "ma50": 410.81,
-        "disparity25": 91.3,
-        "disparity50": 89.93,
-        "primary_disparity": 91.3,
+        "close": 363.36,
+        "ma25": 404.38,
+        "ma50": 410.68,
+        "disparity25": 89.86,
+        "disparity50": 88.48,
+        "primary_disparity": 89.86,
         "zone": "cooldown"
       }
     ]
@@ -37733,6 +37748,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "커스텀 ASIC·광 DSP",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -38178,7 +38194,7 @@
       {
         "date": "2025-09-02",
         "close": 64.48,
-        "ma25": 74.87,
+        "ma25": 74.86,
         "ma50": 74.32,
         "disparity25": 86.13,
         "disparity50": 86.75,
@@ -40237,12 +40253,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 257.33,
-        "ma25": 265.21,
-        "ma50": 215.69,
-        "disparity25": 97.03,
-        "disparity50": 119.3,
-        "primary_disparity": 97.03,
+        "close": 254.09,
+        "ma25": 265.08,
+        "ma50": 215.63,
+        "disparity25": 95.85,
+        "disparity50": 117.84,
+        "primary_disparity": 95.85,
         "zone": "cooldown"
       }
     ]
@@ -40261,6 +40277,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "엣지 AI·모바일 SoC",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -42699,6 +42716,7 @@
     "ai_group": "01_AI_COMPUTE_ASIC",
     "product_group": "AI ASIC 설계 서비스",
     "exposure_type": "HIGH_RISK",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -45137,6 +45155,7 @@
     "ai_group": "02_MEMORY_STORAGE",
     "product_group": "HBM·DRAM·낸드",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -47595,6 +47614,7 @@
     "ai_group": "02_MEMORY_STORAGE",
     "product_group": "DRAM·HBM·낸드(+파운드리)",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -50053,6 +50073,7 @@
     "ai_group": "02_MEMORY_STORAGE",
     "product_group": "DRAM·HBM·낸드",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -52557,13 +52578,13 @@
       },
       {
         "date": "2026-06-29",
-        "close": 1064.98,
-        "ma25": 1010.88,
-        "ma50": 814.29,
-        "disparity25": 105.35,
-        "disparity50": 130.79,
-        "primary_disparity": 105.35,
-        "zone": "normal"
+        "close": 1049.1,
+        "ma25": 1010.24,
+        "ma50": 813.98,
+        "disparity25": 103.85,
+        "disparity50": 128.89,
+        "primary_disparity": 103.85,
+        "zone": "cooldown"
       }
     ]
   },
@@ -52581,6 +52602,7 @@
     "ai_group": "02_MEMORY_STORAGE",
     "product_group": "낸드플래시",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -55029,6 +55051,7 @@
     "ai_group": "02_MEMORY_STORAGE",
     "product_group": "SSD 컨트롤러·SmartNIC",
     "exposure_type": "HIGH_RISK",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -57487,6 +57510,7 @@
     "ai_group": "03_FOUNDRY_MANUFACTURING",
     "product_group": "선단공정 파운드리 1위",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -59991,12 +60015,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 438.56,
-        "ma25": 430.79,
-        "ma50": 413.43,
-        "disparity25": 101.8,
-        "disparity50": 106.08,
-        "primary_disparity": 101.8,
+        "close": 435.11,
+        "ma25": 430.66,
+        "ma50": 413.36,
+        "disparity25": 101.03,
+        "disparity50": 105.26,
+        "primary_disparity": 101.03,
         "zone": "cooldown"
       }
     ]
@@ -60015,6 +60039,7 @@
     "ai_group": "03_FOUNDRY_MANUFACTURING",
     "product_group": "CPU·IDM·파운드리",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -62519,12 +62544,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 121.68,
-        "ma25": 119.84,
-        "ma50": 109.45,
-        "disparity25": 101.53,
-        "disparity50": 111.18,
-        "primary_disparity": 101.53,
+        "close": 120.04,
+        "ma25": 119.78,
+        "ma50": 109.42,
+        "disparity25": 100.21,
+        "disparity50": 109.7,
+        "primary_disparity": 100.21,
         "zone": "cooldown"
       }
     ]
@@ -62543,6 +62568,7 @@
     "ai_group": "03_FOUNDRY_MANUFACTURING",
     "product_group": "성숙공정 파운드리",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -64981,6 +65007,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "HBM TC 본더",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -67439,6 +67466,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "증착·식각 등 종합장비",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -68263,7 +68291,7 @@
       },
       {
         "date": "2025-10-24",
-        "close": 227.74,
+        "close": 227.73,
         "ma25": 215.36,
         "ma50": 190.31,
         "disparity25": 105.75,
@@ -69943,12 +69971,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 659.03,
-        "ma25": 535.2,
-        "ma50": 473.35,
-        "disparity25": 123.14,
-        "disparity50": 139.23,
-        "primary_disparity": 123.14,
+        "close": 652.7,
+        "ma25": 534.95,
+        "ma50": 473.22,
+        "disparity25": 122.01,
+        "disparity50": 137.93,
+        "primary_disparity": 122.01,
         "zone": "caution"
       }
     ]
@@ -69967,6 +69995,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "식각·증착 장비",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -72471,12 +72500,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 388.5,
-        "ma25": 350.53,
-        "ma50": 312.72,
-        "disparity25": 110.83,
-        "disparity50": 124.23,
-        "primary_disparity": 110.83,
+        "close": 384.76,
+        "ma25": 350.39,
+        "ma50": 312.64,
+        "disparity25": 109.81,
+        "disparity50": 123.07,
+        "primary_disparity": 109.81,
         "zone": "normal"
       }
     ]
@@ -72495,6 +72524,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "공정 검사·계측",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -72712,9 +72742,9 @@
         "close": 91.91,
         "ma25": 90.98,
         "ma50": 86.13,
-        "disparity25": 101.02,
-        "disparity50": 106.71,
-        "primary_disparity": 101.02,
+        "disparity25": 101.01,
+        "disparity50": 106.7,
+        "primary_disparity": 101.01,
         "zone": "cooldown"
       },
       {
@@ -74999,12 +75029,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 259.8,
-        "ma25": 225.4,
-        "ma50": 203.03,
-        "disparity25": 115.26,
-        "disparity50": 127.96,
-        "primary_disparity": 115.26,
+        "close": 255.12,
+        "ma25": 225.22,
+        "ma50": 202.94,
+        "disparity25": 113.28,
+        "disparity50": 125.71,
+        "primary_disparity": 113.28,
         "zone": "normal"
       }
     ]
@@ -75023,6 +75053,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "EUV/DUV 노광장비 독점",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -75248,7 +75279,7 @@
       {
         "date": "2025-07-31",
         "close": 691.06,
-        "ma25": 757.07,
+        "ma25": 757.08,
         "ma50": 756.21,
         "disparity25": 91.28,
         "disparity50": 91.38,
@@ -77527,12 +77558,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 1803.47,
-        "ma25": 1758.75,
-        "ma50": 1621.05,
-        "disparity25": 102.54,
-        "disparity50": 111.25,
-        "primary_disparity": 102.54,
+        "close": 1785.9,
+        "ma25": 1758.04,
+        "ma50": 1620.69,
+        "disparity25": 101.58,
+        "disparity50": 110.19,
+        "primary_disparity": 101.58,
         "zone": "cooldown"
       }
     ]
@@ -77551,6 +77582,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "코터·증착·식각 장비",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -77575,7 +77607,7 @@
       },
       {
         "date": "2025-07-02",
-        "close": 26076.75,
+        "close": 26076.76,
         "ma25": 24061.43,
         "ma50": 22918.51,
         "disparity25": 108.38,
@@ -77825,7 +77857,7 @@
       },
       {
         "date": "2025-08-07",
-        "close": 20618.15,
+        "close": 20618.14,
         "ma25": 25786.22,
         "ma50": 24923.83,
         "disparity25": 79.96,
@@ -77875,7 +77907,7 @@
       },
       {
         "date": "2025-08-15",
-        "close": 21093.87,
+        "close": 21093.88,
         "ma25": 24666.84,
         "ma50": 24778.75,
         "disparity25": 85.52,
@@ -77935,7 +77967,7 @@
       },
       {
         "date": "2025-08-25",
-        "close": 19838.35,
+        "close": 19838.34,
         "ma25": 23121.55,
         "ma50": 24375.71,
         "disparity25": 85.8,
@@ -78045,7 +78077,7 @@
       },
       {
         "date": "2025-09-09",
-        "close": 20618.15,
+        "close": 20618.14,
         "ma25": 20428.25,
         "ma50": 23428.37,
         "disparity25": 100.93,
@@ -78085,7 +78117,7 @@
       },
       {
         "date": "2025-09-16",
-        "close": 22575.0,
+        "close": 22575.01,
         "ma25": 20502.79,
         "ma50": 23031.51,
         "disparity25": 110.11,
@@ -79999,6 +80031,7 @@
     "ai_group": "04_EQUIPMENT_TEST",
     "product_group": "HBM·SoC 테스터",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -80403,7 +80436,7 @@
       },
       {
         "date": "2025-08-27",
-        "close": 11356.71,
+        "close": 11356.7,
         "ma25": 10786.63,
         "ma50": 10715.93,
         "disparity25": 105.29,
@@ -82447,6 +82480,7 @@
     "ai_group": "05_PACKAGING_SUBSTRATE_PCB",
     "product_group": "패키지 기판(FC-BGA)",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -84905,6 +84939,7 @@
     "ai_group": "05_PACKAGING_SUBSTRATE_PCB",
     "product_group": "AI 가속기용 고다층 PCB",
     "exposure_type": "HIGH_RISK",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -87363,6 +87398,7 @@
     "ai_group": "05_PACKAGING_SUBSTRATE_PCB",
     "product_group": "후공정 패키징·테스트",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -89801,6 +89837,7 @@
     "ai_group": "05_PACKAGING_SUBSTRATE_PCB",
     "product_group": "ABF 패키지 기판",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -92239,6 +92276,7 @@
     "ai_group": "05_PACKAGING_SUBSTRATE_PCB",
     "product_group": "ABF 패키지 기판 선두",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -94687,6 +94725,7 @@
     "ai_group": "06_MLCC_PASSIVE_COMPONENT",
     "product_group": "MLCC 세계 2위·FC-BGA 기판",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -97145,6 +97184,7 @@
     "ai_group": "06_MLCC_PASSIVE_COMPONENT",
     "product_group": "MLCC 세계 1위",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -99593,6 +99633,7 @@
     "ai_group": "06_MLCC_PASSIVE_COMPONENT",
     "product_group": "MLCC·인덕터",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -102041,6 +102082,7 @@
     "ai_group": "06_MLCC_PASSIVE_COMPONENT",
     "product_group": "MLCC·소형 배터리",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -104489,6 +104531,7 @@
     "ai_group": "06_MLCC_PASSIVE_COMPONENT",
     "product_group": "칩저항·MLCC",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -106927,6 +106970,7 @@
     "ai_group": "07_NETWORK_OPTICAL",
     "product_group": "AI 데이터센터 스위치",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -109431,12 +109475,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 158.79,
-        "ma25": 162.15,
-        "ma50": 159.84,
-        "disparity25": 97.93,
-        "disparity50": 99.35,
-        "primary_disparity": 97.93,
+        "close": 156.29,
+        "ma25": 162.05,
+        "ma50": 159.79,
+        "disparity25": 96.45,
+        "disparity50": 97.81,
+        "primary_disparity": 96.45,
         "zone": "cooldown"
       }
     ]
@@ -109455,6 +109499,7 @@
     "ai_group": "07_NETWORK_OPTICAL",
     "product_group": "광트랜시버·광부품",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -111959,12 +112004,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 351.15,
-        "ma25": 385.92,
-        "ma50": 367.02,
-        "disparity25": 90.99,
-        "disparity50": 95.68,
-        "primary_disparity": 90.99,
+        "close": 344.57,
+        "ma25": 385.66,
+        "ma50": 366.88,
+        "disparity25": 89.35,
+        "disparity50": 93.92,
+        "primary_disparity": 89.35,
         "zone": "cooldown"
       }
     ]
@@ -111983,6 +112028,7 @@
     "ai_group": "07_NETWORK_OPTICAL",
     "product_group": "화이트박스 스위치 ODM",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -114421,6 +114467,7 @@
     "ai_group": "08_POWER_COOLING_GRID",
     "product_group": "변압기·전력기기",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -116879,6 +116926,7 @@
     "ai_group": "08_POWER_COOLING_GRID",
     "product_group": "배전·전력 인프라",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -119337,6 +119385,7 @@
     "ai_group": "08_POWER_COOLING_GRID",
     "product_group": "데이터센터 전력·냉각",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -121841,12 +121890,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 304.8,
-        "ma25": 314.99,
-        "ma50": 324.25,
-        "disparity25": 96.76,
-        "disparity50": 94.0,
-        "primary_disparity": 96.76,
+        "close": 298.92,
+        "ma25": 314.76,
+        "ma50": 324.13,
+        "disparity25": 94.97,
+        "disparity50": 92.22,
+        "primary_disparity": 94.97,
         "zone": "cooldown"
       }
     ]
@@ -121865,6 +121914,7 @@
     "ai_group": "08_POWER_COOLING_GRID",
     "product_group": "전력관리·배전",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -122019,7 +122069,7 @@
       },
       {
         "date": "2025-07-22",
-        "close": 368.37,
+        "close": 368.38,
         "ma25": 350.79,
         "ma50": 336.09,
         "disparity25": 105.01,
@@ -124369,12 +124419,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 407.4,
-        "ma25": 405.76,
-        "ma50": 406.34,
-        "disparity25": 100.4,
-        "disparity50": 100.26,
-        "primary_disparity": 100.4,
+        "close": 404.48,
+        "ma25": 405.64,
+        "ma50": 406.28,
+        "disparity25": 99.71,
+        "disparity50": 99.56,
+        "primary_disparity": 99.71,
         "zone": "cooldown"
       }
     ]
@@ -124393,6 +124443,7 @@
     "ai_group": "08_POWER_COOLING_GRID",
     "product_group": "전원공급·열관리 솔루션",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -126831,6 +126882,7 @@
     "ai_group": "09_AI_SERVER_ODM",
     "product_group": "AI 서버·랙 시스템",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -129335,12 +129387,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 29.94,
-        "ma25": 36.78,
-        "ma50": 33.53,
-        "disparity25": 81.39,
-        "disparity50": 89.3,
-        "primary_disparity": 81.39,
+        "close": 29.42,
+        "ma25": 36.76,
+        "ma50": 33.52,
+        "disparity25": 80.01,
+        "disparity50": 87.76,
+        "primary_disparity": 80.01,
         "zone": "cooldown"
       }
     ]
@@ -129359,6 +129411,7 @@
     "ai_group": "09_AI_SERVER_ODM",
     "product_group": "AI 서버·엔터프라이즈",
     "exposure_type": "SECONDARY",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -131863,12 +131916,12 @@
       },
       {
         "date": "2026-06-29",
-        "close": 382.77,
-        "ma25": 393.44,
-        "ma50": 309.67,
-        "disparity25": 97.29,
-        "disparity50": 123.6,
-        "primary_disparity": 97.29,
+        "close": 380.97,
+        "ma25": 393.37,
+        "ma50": 309.64,
+        "disparity25": 96.85,
+        "disparity50": 123.04,
+        "primary_disparity": 96.85,
         "zone": "cooldown"
       }
     ]
@@ -131887,6 +131940,7 @@
     "ai_group": "09_AI_SERVER_ODM",
     "product_group": "AI 서버 위탁생산 1위",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -134325,6 +134379,7 @@
     "ai_group": "09_AI_SERVER_ODM",
     "product_group": "AI 서버 ODM",
     "exposure_type": "CORE",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -136763,6 +136818,7 @@
     "ai_group": "09_AI_SERVER_ODM",
     "product_group": "하이퍼스케일 서버 ODM",
     "exposure_type": "HIGH_RISK",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -139201,6 +139257,7 @@
     "ai_group": "10_INDIRECT_HOLDING",
     "product_group": "SK하이닉스 지배 지주사",
     "exposure_type": "INDIRECT",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {
@@ -141659,6 +141716,7 @@
     "ai_group": "10_INDIRECT_HOLDING",
     "product_group": "삼성그룹 지배구조 핵심",
     "exposure_type": "INDIRECT",
+    "disparity_meaningful": true,
     "primary_window": 25,
     "data": [
       {

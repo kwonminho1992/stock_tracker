@@ -89,6 +89,8 @@ AI_GROUP_ORDER: List[str] = [
 #   ai_subgroup  : 세부 하위분류
 #   product_group: 주요 제품군/분야 설명
 #   exposure_type: CORE | SECONDARY | INDIRECT | BENCHMARK | HIGH_RISK
+#   disparity_meaningful: False 면 이격도 과열 판정을 하지 않는다(환율·금리·변동성 등
+#                 가격 추세가 아닌 지표). 생략 시 True. 값은 참고용으로 계속 표시된다.
 #   note         : 짧은 설명(선택)
 #   enabled      : False 이면 수집에서 제외
 # ---------------------------------------------------------------------------
@@ -105,10 +107,10 @@ ASSETS: List[Dict] = [
     {"name": "S&P500", "code": "^GSPC", "market": "US", "country": "US", "sector": "시장지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^GSPC", "sort_order": 8, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "미국 대형주 지수", "exposure_type": "BENCHMARK", "enabled": True},
     {"name": "나스닥100", "code": "^NDX", "market": "US", "country": "US", "sector": "시장지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^NDX", "sort_order": 9, "ai_group": "00_INDEX", "ai_subgroup": "기술주지수", "product_group": "나스닥 대형 기술주", "exposure_type": "BENCHMARK", "enabled": True},
     {"name": "PHLX 반도체", "code": "^SOX", "market": "US", "country": "US", "sector": "반도체 지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^SOX", "sort_order": 10, "ai_group": "00_INDEX", "ai_subgroup": "반도체지수", "product_group": "필라델피아 반도체 지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "VIX 변동성", "code": "^VIX", "market": "US", "country": "US", "sector": "변동성", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^VIX", "sort_order": 11, "ai_group": "00_INDEX", "ai_subgroup": "변동성", "product_group": "S&P500 변동성 지수(공포)", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "美 국채 10년 금리", "code": "^TNX", "market": "US", "country": "US", "sector": "금리", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^TNX", "sort_order": 12, "ai_group": "00_INDEX", "ai_subgroup": "금리", "product_group": "미국 10년물 국채 금리", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "원/달러 환율", "code": "KRW=X", "market": "KR", "country": "KR", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "KRW=X", "sort_order": 13, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/KRW", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "엔/달러 환율", "code": "JPY=X", "market": "JP", "country": "JP", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "JPY=X", "sort_order": 14, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/JPY", "exposure_type": "BENCHMARK", "enabled": True},
+    {"name": "VIX 변동성", "code": "^VIX", "market": "US", "country": "US", "sector": "변동성", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^VIX", "sort_order": 11, "ai_group": "00_INDEX", "ai_subgroup": "변동성", "product_group": "S&P500 변동성 지수(공포)", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
+    {"name": "美 국채 10년 금리", "code": "^TNX", "market": "US", "country": "US", "sector": "금리", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^TNX", "sort_order": 12, "ai_group": "00_INDEX", "ai_subgroup": "금리", "product_group": "미국 10년물 국채 금리", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
+    {"name": "원/달러 환율", "code": "KRW=X", "market": "KR", "country": "KR", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "KRW=X", "sort_order": 13, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/KRW", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
+    {"name": "엔/달러 환율", "code": "JPY=X", "market": "JP", "country": "JP", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "JPY=X", "sort_order": 14, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/JPY", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
     {"name": "닛케이 반도체지수", "code": "NKSCD_CUSTOM", "market": "JP", "country": "JP", "sector": "반도체 지수", "asset_type": "jp_index", "source": "custom", "yf_ticker": "NKSCD_CUSTOM", "sort_order": 15, "ai_group": "00_INDEX", "ai_subgroup": "반도체지수", "product_group": "Nikkei Semiconductor Stock Index", "exposure_type": "BENCHMARK", "note": "yfinance 직접 수집 불가 → custom source 필요", "enabled": False},
 
     # ===================== 01_AI_COMPUTE_ASIC : AI 연산·ASIC =====================

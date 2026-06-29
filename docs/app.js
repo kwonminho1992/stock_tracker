@@ -10,6 +10,7 @@ const ZONE_META = {
 
 const DATA = { latest: null, history: null };
 let chart = null;
+let lastChartSig = null;
 let sortByDisparity = false;
 let selectedCode = null;
 let lastLoadAt = 0;
@@ -200,13 +201,22 @@ function renderTable() {
 
   assets.sort(groupedAssetCompare(sortByDisparity));
 
+  // 그룹별 과열/경계 개수(헤더 요약 배지용)
+  const groupCounts = {};
+  assets.forEach((a) => {
+    const g = a.ai_group || "기타";
+    const c = (groupCounts[g] = groupCounts[g] || { overheat: 0, caution: 0 });
+    if (a.zone === "overheat") c.overheat++;
+    else if (a.zone === "caution") c.caution++;
+  });
+
   // 그룹이 바뀔 때마다 구분용 헤더 행을 끼워 넣어 "한눈에" 묶음 보기.
   let lastGroup = null;
   const rows = [];
   assets.forEach((a) => {
     if (a.ai_group !== lastGroup) {
       lastGroup = a.ai_group;
-      rows.push(groupHeaderHtml(lastGroup));
+      rows.push(groupHeaderHtml(lastGroup, groupCounts[lastGroup || "기타"]));
     }
     rows.push(rowHtml(a));
   });
@@ -248,12 +258,30 @@ function groupedAssetCompare(sortByMetric) {
   };
 }
 
-function groupHeaderHtml(group) {
+function groupHeaderHtml(group, counts) {
   const label = AI_GROUP_LABELS[group] || group || "기타";
   const num = String(group || "").slice(0, 2);
+  let badge = "";
+  if (counts && (counts.overheat || counts.caution)) {
+    const parts = [];
+    if (counts.overheat)
+      parts.push(`<span class="gh-over">과열 ${counts.overheat}</span>`);
+    if (counts.caution)
+      parts.push(`<span class="gh-caut">경계 ${counts.caution}</span>`);
+    badge = ` <span class="gh-badge">${parts.join(" ")}</span>`;
+  }
   return `<tr class="group-header"><td colspan="13">${escapeHtml(
     num
-  )} · ${escapeHtml(label)}</td></tr>`;
+  )} · ${escapeHtml(label)}${badge}</td></tr>`;
+}
+
+function zoneCellHtml(a) {
+  const meta = ZONE_META[a.zone];
+  if (meta) return `<span class="zone-pill ${meta.cls}">${meta.label}</span>`;
+  // 환율·금리·변동성 등 과열 판정을 하지 않는 지표는 '참고'로 표시.
+  if (a.disparity_meaningful === false)
+    return `<span class="zone-pill zone-ref">참고</span>`;
+  return `<span class="zone-na">-</span>`;
 }
 
 function exposureTag(a) {
@@ -287,7 +315,6 @@ function rowHtml(a) {
     </tr>`;
   }
 
-  const zoneMeta = ZONE_META[a.zone] || { label: a.zone || "-", cls: "" };
   const change = a.change_pct;
   const changeCls = change == null ? "" : change >= 0 ? "pos" : "neg";
   const changeTxt =
@@ -322,9 +349,7 @@ function rowHtml(a) {
       a.disparity50
     )}</td>
     <td class="num" data-label="120일">${fmtDisp(a.disparity120)}</td>
-    <td data-label="과열"><span class="zone-pill ${zoneMeta.cls}">${escapeHtml(
-      zoneMeta.label
-    )}</span></td>
+    <td data-label="과열">${zoneCellHtml(a)}</td>
     <td data-label="최신성"><div class="asset-sub">${escapeHtml(
       a.date || ""
     )}</div>${warns.join(" ")}</td>
@@ -389,6 +414,39 @@ function populateAssetSelect() {
   sel.value = selectedCode;
 }
 
+function updateChartCaption(entry) {
+  const el = document.getElementById("chart-caption");
+  if (!el) return;
+  if (!entry) {
+    el.innerHTML = "";
+    return;
+  }
+  const a =
+    ((DATA.latest && DATA.latest.assets) || []).find(
+      (x) => x.code === entry.code
+    ) || {};
+  const pw = entry.primary_window || 50;
+  const parts = [`<strong>${escapeHtml(entry.name)}</strong>`];
+  if (a.product_group) parts.push(escapeHtml(a.product_group));
+  if (a.close != null) parts.push(`현재가 ${fmtNum(a.close)}`);
+  if (a.change_pct != null)
+    parts.push(
+      `<span class="${a.change_pct >= 0 ? "pos" : "neg"}">${
+        a.change_pct >= 0 ? "+" : ""
+      }${a.change_pct.toFixed(2)}%</span>`
+    );
+  if (a.primary_disparity != null) {
+    const zoneTxt =
+      a.zone && ZONE_META[a.zone]
+        ? ` (${ZONE_META[a.zone].label})`
+        : a.disparity_meaningful === false
+        ? " (참고)"
+        : "";
+    parts.push(`${pw}일 이격도 ${fmtDisp(a.primary_disparity)}%${zoneTxt}`);
+  }
+  el.innerHTML = parts.join(" · ");
+}
+
 function renderChart() {
   const canvas = document.getElementById("disparity-chart");
   const hist = DATA.history || {};
@@ -399,6 +457,8 @@ function renderChart() {
       chart.destroy();
       chart = null;
     }
+    lastChartSig = null;
+    updateChartCaption(null);
     return;
   }
 
@@ -408,6 +468,20 @@ function renderChart() {
     d.primary_disparity == null ? d[`disparity${primaryWindow}`] : d.primary_disparity
   );
   const closes = entry.data.map((d) => d.close);
+  // 환율·금리·변동성처럼 과열 판정이 무의미한 지표는 기준선(130/120/105)을 숨긴다.
+  const showRef = entry.disparity_meaningful !== false;
+
+  updateChartCaption(entry);
+
+  // 데이터·선택·기준선이 그대로면 다시 그리지 않는다(자동 새로고침 시 깜빡임 방지).
+  const sig = `${selectedCode}|${labels.length}|${closes[closes.length - 1]}|${
+    values[values.length - 1]
+  }|${showRef}`;
+  if (chart && sig === lastChartSig) return;
+  lastChartSig = sig;
+
+  const small = window.innerWidth < 640;
+  const tickFont = { size: small ? 9 : 11 };
 
   const refLine = (val, color) => ({
     label: `ref-${val}`,
@@ -423,7 +497,7 @@ function renderChart() {
 
   const datasets = [
     {
-      label: `${entry.name} ${primaryWindow}일 판정 이격도`,
+      label: `${primaryWindow}일 판정 이격도`,
       data: values,
       yAxisID: "disparity",
       borderColor: "#4c8bf5",
@@ -434,7 +508,7 @@ function renderChart() {
       tension: 0.15,
     },
     {
-      label: `${entry.name} 가격`,
+      label: `가격`,
       data: closes,
       yAxisID: "price",
       borderColor: "#d9a441",
@@ -444,10 +518,14 @@ function renderChart() {
       fill: false,
       tension: 0.15,
     },
-    refLine(130, "#ff7b8a"),
-    refLine(120, "#ffc15e"),
-    refLine(105, "#6fb6e8"),
   ];
+  if (showRef) {
+    datasets.push(
+      refLine(130, "#ff7b8a"),
+      refLine(120, "#ffc15e"),
+      refLine(105, "#6fb6e8")
+    );
+  }
 
   if (chart) chart.destroy();
   chart = new Chart(canvas.getContext("2d"), {
@@ -459,34 +537,30 @@ function renderChart() {
       interaction: { mode: "index", intersect: false },
       scales: {
         x: {
-          ticks: { color: "#9aa7b4", maxTicksLimit: 8, autoSkip: true },
+          ticks: { color: "#9aa7b4", maxTicksLimit: small ? 5 : 8, autoSkip: true, font: tickFont },
           grid: { color: "#222b36" },
         },
         disparity: {
           type: "linear",
           position: "left",
-          ticks: {
-            color: "#9aa7b4",
-            callback: (value) => `${value}%`,
-          },
+          ticks: { color: "#9aa7b4", callback: (v) => `${v}%`, font: tickFont },
           grid: { color: "#222b36" },
-          title: { display: true, text: "이격도", color: "#9aa7b4" },
+          title: { display: !small, text: "이격도", color: "#9aa7b4" },
         },
         price: {
           type: "linear",
           position: "right",
-          ticks: {
-            color: "#b8a06a",
-            callback: (value) => fmtCompactNum(value),
-          },
+          ticks: { color: "#b8a06a", callback: (v) => fmtCompactNum(v), font: tickFont },
           grid: { drawOnChartArea: false },
-          title: { display: true, text: "가격", color: "#b8a06a" },
+          title: { display: !small, text: "가격", color: "#b8a06a" },
         },
       },
       plugins: {
         legend: {
           labels: {
             color: "#9aa7b4",
+            boxWidth: 12,
+            font: { size: small ? 10 : 12 },
             // 기준선(ref-*) 범례는 숨긴다
             filter: (item) => !String(item.text).startsWith("ref-"),
           },
@@ -497,10 +571,10 @@ function renderChart() {
             label: (ctx) => {
               const row = entry.data[ctx.dataIndex] || {};
               if (ctx.dataset.yAxisID === "price") {
-                return `${ctx.dataset.label}: ${fmtNum(row.close)}`;
+                return `가격: ${fmtNum(row.close)}`;
               }
               return [
-                `${ctx.dataset.label}: ${fmtDisp(
+                `${primaryWindow}일 이격도: ${fmtDisp(
                   row.primary_disparity == null
                     ? row[`disparity${primaryWindow}`]
                     : row.primary_disparity
@@ -518,42 +592,11 @@ function renderChart() {
 }
 
 // ---- helpers ----
-function sourceLabel(a) {
-  // 장중 모드: 국내 개별종목은 KRX 히스토리에 Yahoo 최신가를 보강하고, 나머지는 yfinance 조회.
-  if (DATA.latest && DATA.latest.run_type === "intraday") {
-    if (a.source === "pykrx_stock+yfinance") return "KRX · pykrx + Yahoo Finance";
-    return "Yahoo Finance · yfinance";
-  }
-  if (a.source === "yfinance") return "Yahoo Finance · yfinance";
-  if (a.source === "pykrx_index" || a.source === "pykrx_stock") return "KRX · pykrx";
-  if (a.source === "pykrx_stock+yfinance") return "KRX · pykrx + Yahoo Finance";
-  return a.market === "US" || a.market === "JP"
-    ? "Yahoo Finance · yfinance"
-    : "KRX · pykrx";
-}
-function assetNotesHtml(a) {
-  const notes = [
-    a.ticker || a.code,
-    countryLabel(a.country || a.market),
-    a.sector,
-    isIndividualStock(a) ? "판정: 25일" : "판정: 50일",
-  ].filter(Boolean);
-  if (a.note) notes.push(a.note);
-  if (notes.length === 0) return "";
-  return `<div class="asset-note">${notes.map(escapeHtml).join(" · ")}</div>`;
-}
 function countryLabel(country) {
-  return { KR: "한국", JP: "일본", TW: "대만", US: "미국" }[country] || country;
-}
-function isIndividualStock(a) {
-  return String(a.asset_type || "").endsWith("_stock");
+  return { KR: "한국", JP: "일본", TW: "대만", US: "미국", EU: "유럽" }[country] || country;
 }
 function primaryMetricClass(a, window) {
   return Number(a.primary_window || 50) === window ? "metric-primary" : "";
-}
-function basisLabel(a) {
-  const window = a.primary_window || 50;
-  return `${window}일 기준`;
 }
 function fmtNum(v) {
   if (v == null) return "-";

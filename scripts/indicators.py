@@ -142,7 +142,10 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
     d25 = round_or_none(_cell(last, "disparity25"))
     d50 = round_or_none(_cell(last, "disparity50"))
     primary_disparity = round_or_none(_cell(last, f"disparity{primary_window}"))
-    zone = classify_zone(primary_disparity)
+    # 환율·금리·변동성처럼 가격 추세가 아닌 지표는 과열 판정을 하지 않는다.
+    # (이격도 숫자 자체는 참고용으로 계속 채운다.)
+    disparity_meaningful = asset.get("disparity_meaningful", True)
+    zone = classify_zone(primary_disparity) if disparity_meaningful else None
 
     # 프리장/애프터마켓 시세(미국 상장 종목만). 이격도 계산엔 미반영, 표시용.
     extended_session = df.attrs.get("extended_session")
@@ -165,6 +168,7 @@ def build_latest_record(asset: Dict, df: pd.DataFrame) -> Dict:
         "ai_subgroup": asset.get("ai_subgroup"),
         "product_group": asset.get("product_group"),
         "exposure_type": asset.get("exposure_type"),
+        "disparity_meaningful": disparity_meaningful,
         "date": pd.Timestamp(last_date).strftime("%Y-%m-%d"),
         "close": close,
         "ma20": round_or_none(_cell(last, "ma20")),

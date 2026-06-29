@@ -217,6 +217,13 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   border-radius: 6px;
   font-size: 0.8rem;
 }
+.zone-ref { background: var(--panel-2); color: var(--text-dim); border: 1px solid var(--border); }
+.zone-na { color: var(--text-dim); }
+
+/* 그룹 헤더 과열/경계 요약 배지 */
+.gh-badge { font-weight: 600; font-size: 0.74rem; }
+.gh-over { color: var(--overheat-fg); margin-left: 8px; }
+.gh-caut { color: var(--caution-fg); margin-left: 8px; }
 
 .pos { color: var(--normal-fg); }
 .neg { color: var(--overheat-fg); }
@@ -253,6 +260,13 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
 
 .chart-wrap { position: relative; height: 360px; }
 .chart-note { margin: 10px 2px 0; color: var(--text-dim); font-size: 0.78rem; }
+.chart-caption {
+  margin: 0 2px 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.chart-caption strong { color: var(--accent); }
 
 #asset-select {
   background: var(--panel-2);
@@ -281,7 +295,8 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   main { padding: 8px 14px 40px; }
   .card { padding: 12px; }
   .section-controls { margin-bottom: 10px; }
-  .chart-wrap { height: 300px; }
+  .chart-wrap { height: 340px; }
+  .chart-caption { font-size: 0.8rem; }
   #asset-select { max-width: 50%; }
 
   /* 최신 이격도 표: 좌우 스크롤 대신 자산별 카드(세로 스택)로 표시 */
