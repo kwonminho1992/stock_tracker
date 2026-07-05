@@ -74,6 +74,34 @@ main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
   border: 1px solid var(--border);
 }
 
+/* 매크로 참고 지표 스트립 (환율·금리·VIX·공포탐욕 → 외부 링크) */
+.macro-section {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 18px;
+  flex-wrap: wrap;
+}
+.macro-title { color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
+.macro-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.macro-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text);
+  text-decoration: none;
+}
+a.macro-chip:hover { border-color: var(--accent); }
+.macro-name { color: var(--text-dim); }
+.macro-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+.macro-ext { color: var(--text-dim); font-size: 0.72rem; }
+.macro-err { color: var(--overheat-fg); }
+
 .zone-overheat { background: var(--overheat-bg); color: var(--overheat-fg); }
 .zone-caution  { background: var(--caution-bg);  color: var(--caution-fg); }
 .zone-normal   { background: var(--normal-bg);   color: var(--normal-fg); }

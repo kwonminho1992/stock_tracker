@@ -28,9 +28,15 @@
     </section>
     <p class="interpretation-note">
       과열 판정 기준: 개별종목은 25일, 지수는 50일 이격도입니다.
-      환율·금리·VIX 등 가격 추세가 아닌 지표는 과열 판정 없이 이격도를 '참고'로만 표시합니다.
       고정 기준선은 빠른 비교용 참고선이며 종목의 변동성·추세에 따라 해석이 달라질 수 있습니다.
     </p>
+
+    <section class="macro-section" aria-label="매크로 참고 지표">
+      <span class="macro-title">매크로 참고</span>
+      <div id="macro-strip" class="macro-strip">
+        <span class="macro-chip">불러오는 중…</span>
+      </div>
+    </section>
 
     <section class="card table-section">
       <div class="section-controls">
@@ -61,7 +67,7 @@
         <label class="filter-select">AI 병목그룹
           <select id="filter-group-sel">
             <option value="ALL">전체</option>
-            <option value="00_INDEX">지수·환율·금리</option>
+            <option value="00_INDEX">시장지수</option>
             <option value="01_AI_COMPUTE_ASIC">AI 연산·ASIC</option>
             <option value="02_MEMORY_STORAGE">메모리·스토리지</option>
             <option value="03_FOUNDRY_MANUFACTURING">파운드리·제조</option>
@@ -100,7 +106,7 @@
               <th class="num" title="25일 이동평균 대비 이격도(%). 개별종목 판정 기준">25일</th>
               <th class="num" title="50일 이동평균 대비 이격도(%). 지수 판정 기준">50일</th>
               <th class="num" title="120일 이동평균 대비 이격도(%). 중기 추세 참고">120일</th>
-              <th title="판정 이격도 기준 과열 구간. 환율·금리·VIX는 '참고'">과열</th>
+              <th title="판정 이격도 기준 과열 구간">과열</th>
               <th title="데이터 기준일과 품질 경고">최신성</th>
             </tr>
           </thead>

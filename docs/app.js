@@ -21,7 +21,7 @@ let filterExposure = "ALL"; // ALL | CORE | SECONDARY | INDIRECT | BENCHMARK | H
 
 // 화면 표시용 라벨
 const AI_GROUP_LABELS = {
-  "00_INDEX": "지수·환율·금리",
+  "00_INDEX": "시장지수",
   "01_AI_COMPUTE_ASIC": "AI 연산·ASIC",
   "02_MEMORY_STORAGE": "메모리·스토리지",
   "03_FOUNDRY_MANUFACTURING": "파운드리·제조",
@@ -40,6 +40,71 @@ const EXPOSURE_LABELS = {
   BENCHMARK: "벤치마크",
   HIGH_RISK: "고위험",
 };
+
+// 매크로 지표(이격도 무관: disparity_meaningful=false)는 표가 아닌 상단
+// 스트립에 현재값·등락률만 표시하고, 상세 차트는 외부 사이트 링크로 연결한다.
+const MACRO_ORDER = ["KRW=X", "JPY=X", "^TNX", "^VIX"];
+const MACRO_LINKS = {
+  "KRW=X":
+    "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW",
+  "JPY=X":
+    "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY",
+  "^TNX": "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield",
+  "^VIX": "https://www.investing.com/indices/volatility-s-p-500",
+};
+// 수집 데이터 없이 링크만 제공하는 항목
+const MACRO_LINK_ONLY = [
+  {
+    name: "공포탐욕지수",
+    url: "https://edition.cnn.com/markets/fear-and-greed",
+    note: "CNN",
+  },
+];
+
+function isMacroAsset(a) {
+  return a && a.disparity_meaningful === false;
+}
+
+function renderMacroStrip() {
+  const el = document.getElementById("macro-strip");
+  if (!el) return;
+  const assets = (DATA.latest && DATA.latest.assets) || [];
+  const macros = assets.filter(isMacroAsset);
+  macros.sort(
+    (a, b) => MACRO_ORDER.indexOf(a.code) - MACRO_ORDER.indexOf(b.code)
+  );
+  const chips = macros.map((a) => {
+    if (a.error) {
+      return `<span class="macro-chip macro-err">${escapeHtml(a.name)} · 오류</span>`;
+    }
+    const chg = a.change_pct;
+    const chgHtml =
+      chg == null
+        ? ""
+        : ` <span class="${chg >= 0 ? "pos" : "neg"}">${
+            chg >= 0 ? "+" : ""
+          }${chg.toFixed(2)}%</span>`;
+    const url = MACRO_LINKS[a.code];
+    const body = `<span class="macro-name">${escapeHtml(
+      a.name
+    )}</span> <span class="macro-val">${fmtNum(a.close)}</span>${chgHtml}<span class="macro-ext" aria-hidden="true">↗</span>`;
+    return url
+      ? `<a class="macro-chip" href="${url}" target="_blank" rel="noopener" title="${escapeHtml(
+          a.name
+        )} 상세 차트 (외부, ${escapeHtml(a.date || "")} 기준)">${body}</a>`
+      : `<span class="macro-chip">${body}</span>`;
+  });
+  MACRO_LINK_ONLY.forEach((m) => {
+    chips.push(
+      `<a class="macro-chip macro-linkonly" href="${m.url}" target="_blank" rel="noopener" title="${escapeHtml(
+        m.name
+      )} (${escapeHtml(m.note)}, 외부)"><span class="macro-name">${escapeHtml(
+        m.name
+      )}</span><span class="macro-ext" aria-hidden="true">↗</span></a>`
+    );
+  });
+  el.innerHTML = chips.join("");
+}
 
 // 탭이 떠 있는 동안 주기적으로 최신 커밋 데이터를 다시 받아온다.
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
@@ -146,6 +211,7 @@ async function loadData() {
     DATA.latest = latest;
     DATA.history = history || {};
     renderHeader();
+    renderMacroStrip();
     renderTable();
     populateAssetSelect();
     renderChart();
@@ -192,7 +258,8 @@ function renderTable() {
       `<tr><td colspan="13" class="loading">표시할 데이터가 없습니다.</td></tr>`;
     return;
   }
-  const assets = all.filter(matchesFilter);
+  // 매크로 지표(환율·금리·VIX)는 상단 스트립에서 보여주므로 표에서 제외.
+  const assets = all.filter((a) => !isMacroAsset(a) && matchesFilter(a));
   if (assets.length === 0) {
     tbody.innerHTML =
       `<tr><td colspan="13" class="loading">해당 조건의 자산이 없습니다.</td></tr>`;
@@ -386,7 +453,8 @@ function highlightSelectedRow() {
 function populateAssetSelect() {
   const sel = document.getElementById("asset-select");
   const hist = DATA.history || {};
-  const codes = Object.keys(hist);
+  // 매크로 지표는 외부 링크로 대체하므로 차트 선택 목록에서도 제외.
+  const codes = Object.keys(hist).filter((c) => !isMacroAsset(hist[c]));
   if (codes.length === 0) {
     sel.innerHTML = `<option>히스토리 없음</option>`;
     selectedCode = null;
@@ -408,8 +476,8 @@ function populateAssetSelect() {
     )
     .join("");
   // 기본 선택: SK하이닉스(000660) 있으면 그것, 없으면 첫 번째
-  if (!selectedCode || !hist[selectedCode]) {
-    selectedCode = hist["000660"] ? "000660" : codes[0];
+  if (!selectedCode || !codes.includes(selectedCode)) {
+    selectedCode = codes.includes("000660") ? "000660" : codes[0];
   }
   sel.value = selectedCode;
 }
