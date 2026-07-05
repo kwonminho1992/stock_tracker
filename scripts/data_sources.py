@@ -123,14 +123,59 @@ def _extract_close_from_yf(df: pd.DataFrame, ticker: str) -> pd.Series:
     raise ValueError(f"[yfinance {ticker}] Close 컬럼 없음: {list(df.columns)}")
 
 
-def _attach_extended_quote(tk, out: pd.DataFrame) -> None:
+def _quote_date(info: Dict):
+    """quote 의 regularMarketTime 을 거래소 현지 날짜로 변환. 실패 시 None."""
+    ts = info.get("regularMarketTime")
+    if not ts:
+        return None
+    try:
+        from datetime import datetime as _dt
+        from zoneinfo import ZoneInfo
+
+        tz_name = info.get("exchangeTimezoneName")
+        tz = ZoneInfo(tz_name) if tz_name else None
+        return _dt.fromtimestamp(int(ts), tz).date()
+    except Exception:
+        return None
+
+
+def _reconcile_with_quote(info: Dict, out: pd.DataFrame, source: str) -> None:
+    """야후 '차트' 일봉을 '쿼트'(regularMarketPrice/Time)와 정합시킨다(in-place).
+
+    야후 차트 엔드포인트는 일부 지수(^KS200, ^TNX, ^N225 등)에서 며칠씩
+    뒤처진 봉을 주는 경우가 있다. 쿼트 엔드포인트는 신선하므로:
+      - 쿼트 날짜 > 마지막 봉 날짜 → 쿼트 가격으로 새 봉 추가(최신화)
+      - 쿼트 날짜 = 마지막 봉 날짜 → 마지막 봉을 쿼트 가격으로 갱신
+      - 쿼트 날짜 < 마지막 봉 날짜 → 쿼트보다 미래의 봉 제거(휴장일 유령 봉 방어)
+    """
+    price = info.get("regularMarketPrice")
+    qdate = _quote_date(info)
+    if price is None or pd.isna(price) or qdate is None or out.empty:
+        return
+    price = float(price)
+    if price <= 0:
+        return
+    qts = pd.Timestamp(qdate)
+    last_ts = out.index[-1]
+    if qts > last_ts:
+        out.loc[qts, "close"] = price
+        out.sort_index(inplace=True)
+    elif qts == last_ts:
+        out.iloc[-1, out.columns.get_loc("close")] = price
+    else:
+        # 차트가 쿼트보다 미래 봉을 갖고 있음(휴장일 유령 봉 등) → 잘라낸다.
+        drop = out.index > qts
+        if drop.any():
+            out.drop(out.index[drop], inplace=True)
+
+
+def _attach_extended_quote(info: Dict, out: pd.DataFrame) -> None:
     """프리장/애프터마켓(시간외) 시세를 out.attrs 에 보강.
 
     야후는 '미국 상장 종목'에만 pre/post 가격을 준다(지수·한/일/대만은 null).
     이격도 계산에는 쓰지 않고, 화면 '가격' 표시용으로만 들고 간다.
     실패해도 일봉 계산은 그대로 진행한다.
     """
-    info = tk.info or {}
     state = info.get("marketState")
     out.attrs["market_state"] = state
 
@@ -186,14 +231,16 @@ def _fetch_yf(ticker: str, want_extended: bool = False) -> pd.DataFrame:
     out = _standardize(close, f"yfinance {ticker}")
 
     try:
-        tk = yf.Ticker(ticker)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            previous_close = tk.fast_info.get("previousClose")
+            info = yf.Ticker(ticker).info or {}
+        # 차트 일봉이 뒤처졌으면 쿼트로 최신화(지수 며칠 지연·유령 봉 방어).
+        _reconcile_with_quote(info, out, f"yfinance {ticker}")
+        previous_close = info.get("regularMarketPreviousClose")
         if previous_close is not None and pd.notna(previous_close):
             out.attrs["latest_previous_close"] = float(previous_close)
         if want_extended:
-            _attach_extended_quote(tk, out)
+            _attach_extended_quote(info, out)
     except Exception:
         # quote 메타데이터가 실패해도 일봉 계산은 계속 진행한다.
         pass
@@ -216,24 +263,38 @@ def fetch_us(asset: Dict) -> pd.DataFrame:
     )
 
 
-def fetch_kr_stock_intraday(asset: Dict) -> pd.DataFrame:
-    """국내 개별종목 장중 모드: FDR(KRX) 종가 히스토리에 yfinance 최신가만 보강.
+def fetch_kr_intraday(asset: Dict) -> pd.DataFrame:
+    """국내 종목/지수 장중 모드: FDR(KRX) 히스토리에 yfinance 쿼트 최신가만 보강.
 
-    yfinance 국내 종목 히스토리는 일부 날짜가 KRX 종가와 어긋나는 경우가 있어,
-    이동평균 계산용 과거 데이터는 FDR(KRX) 를 우선한다. 단, 장중에는 FDR 에 당일 봉이
-    없을 수 있으므로 yfinance 최신 행이 더 최신 날짜일 때만 추가한다.
+    yfinance 국내 히스토리는 일부 날짜가 KRX 종가와 어긋나거나 며칠 뒤처지는
+    경우가 있어, 이동평균 계산용 과거 데이터는 FDR(KRX) 를 우선한다.
+    단, 장중에는 FDR 에 당일 봉이 없을 수 있으므로 yfinance 쿼트가 더 최신
+    날짜일 때만 추가한다(같은 날짜면 KRX 공식값 유지).
     """
-    base = fetch_kr_stock(asset)
-    yf_df = _fetch_yf(asset.get("yf_ticker") or f"{asset['code']}.KS")
+    if asset.get("asset_type") == "kr_stock":
+        out = fetch_kr_stock(asset).copy()
+    else:
+        out = fetch_kr_index(asset).copy()
 
-    out = base.copy()
-    if not yf_df.empty:
-        yf_last_date = yf_df.index[-1]
-        base_last_date = out.index[-1]
-        if yf_last_date > base_last_date:
-            out.loc[yf_last_date, "close"] = yf_df["close"].iloc[-1]
-            out = out.sort_index()
-        out.attrs.update(yf_df.attrs)
+    try:
+        import yfinance as yf
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            info = yf.Ticker(asset.get("yf_ticker") or f"{asset['code']}.KS").info or {}
+        price = info.get("regularMarketPrice")
+        qdate = _quote_date(info)
+        if price is not None and pd.notna(price) and float(price) > 0 and qdate:
+            qts = pd.Timestamp(qdate)
+            if qts > out.index[-1]:
+                out.loc[qts, "close"] = float(price)
+                out = out.sort_index()
+        previous_close = info.get("regularMarketPreviousClose")
+        if previous_close is not None and pd.notna(previous_close):
+            out.attrs["latest_previous_close"] = float(previous_close)
+    except Exception:
+        # 쿼트 보강 실패 시 FDR(KRX) 데이터만으로 진행한다.
+        pass
     return out
 
 
@@ -248,8 +309,8 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
     """run_type 과 asset['source'] 에 따라 적절한 fetch 함수로 라우팅.
 
     - run_type="close"    : 종가 모드. 국내=FDR(KRX), 해외=yfinance.
-    - run_type="intraday" : 장중 모드. 국내 개별종목은 FDR(KRX) 종가 히스토리에
-      yfinance 최신가를 보강하고, 나머지는 yf_ticker 로 yfinance(지연시세) 조회.
+    - run_type="intraday" : 장중 모드. 국내 종목/지수는 FDR(KRX) 히스토리에
+      yfinance 쿼트 최신가를 보강하고, 나머지는 yf_ticker 로 yfinance(지연시세) 조회.
     """
     if run_type == "intraday":
         yf_ticker = asset.get("yf_ticker")
@@ -257,8 +318,11 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
             raise ValueError(
                 f"장중 모드에는 yf_ticker 가 필요합니다(미설정): {asset.get('name')}"
             )
-        if asset.get("asset_type") == "kr_stock":
-            return fetch_kr_stock_intraday(asset)
+        if asset.get("asset_type") == "kr_stock" or asset.get("source") in (
+            "krx_index",
+            "krx_stock",
+        ):
+            return fetch_kr_intraday(asset)
         return _fetch_yf(yf_ticker, want_extended=wants_extended_quote(asset))
 
     source = asset.get("source")

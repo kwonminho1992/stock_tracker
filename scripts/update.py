@@ -58,6 +58,14 @@ def now_kst() -> datetime:
     return datetime.now(KST)
 
 
+def _uses_krx(asset: Dict) -> bool:
+    """장중 모드에서 KRX(FDR) 히스토리를 기반으로 하는 자산인지."""
+    return asset.get("asset_type") == "kr_stock" or asset.get("source") in (
+        "krx_index",
+        "krx_stock",
+    )
+
+
 def make_error_record(asset: Dict, message: str) -> Dict:
     return {
         "name": asset.get("name", "?"),
@@ -141,9 +149,7 @@ def process_asset(
         latest = build_latest_record(asset, df)
         if run_type == "intraday":
             latest["source"] = (
-                "krx+yfinance"
-                if asset.get("asset_type") == "kr_stock"
-                else "yfinance"
+                "krx+yfinance" if _uses_krx(asset) else "yfinance"
             )
 
         fatal = check_fatal(latest)
@@ -170,7 +176,7 @@ def process_asset(
             "asset_type": asset["asset_type"],
             "source": (
                 "krx+yfinance"
-                if run_type == "intraday" and asset.get("asset_type") == "kr_stock"
+                if run_type == "intraday" and _uses_krx(asset)
                 else "yfinance" if run_type == "intraday" else asset.get("source")
             ),
             "note": asset.get("note"),
