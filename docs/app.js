@@ -44,23 +44,39 @@ const EXPOSURE_LABELS = {
   HIGH_RISK: "고위험",
 };
 
-// 매크로 지표(이격도 무관: disparity_meaningful=false)는 표가 아닌 상단
-// 스트립에 현재값·등락률만 표시하고, 상세 차트는 외부 사이트 링크로 연결한다.
-const MACRO_ORDER = ["KRW=X", "JPY=X", "^TNX", "^VIX"];
-const MACRO_LINKS = {
-  "KRW=X":
-    "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW",
-  "JPY=X":
-    "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY",
-  "^TNX": "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield",
-  "^VIX": "https://www.investing.com/indices/volatility-s-p-500",
-};
-// 수집 데이터 없이 링크만 제공하는 항목
+// 매크로 지표(이격도 무관: disparity_meaningful=false)는 표가 아닌 상단 카드에
+// 현재값·등락률·해설을 보여주고, 상세는 외부 사이트 링크로 연결한다.
+// 야후로 값이 안 잡히는 지표(한국 국채금리·통화량 등)는 링크 전용 카드로 제공.
 const MACRO_LINK_ONLY = [
   {
     name: "공포탐욕지수",
+    desc: "시장 심리 종합(0=극공포 ~ 100=극탐욕). CNN 집계",
     url: "https://edition.cnn.com/markets/fear-and-greed",
     note: "CNN",
+  },
+  {
+    name: "한국 10년 국채금리",
+    desc: "국내 장기금리. 유동성·환율·부동산·성장 기대와 연동",
+    url: "https://www.investing.com/rates-bonds/south-korea-10-year-bond-yield",
+    note: "Investing",
+  },
+  {
+    name: "미국 M2 통화량",
+    desc: "통화량(유동성) 추이. 자산가격의 큰 흐름을 좌우",
+    url: "https://fred.stlouisfed.org/series/M2SL",
+    note: "FRED",
+  },
+  {
+    name: "한국 M2 통화량",
+    desc: "국내 유동성 지표(광의통화). 한국은행/FRED 집계",
+    url: "https://fred.stlouisfed.org/series/MYAGM2KRM189S",
+    note: "FRED",
+  },
+  {
+    name: "미국 CPI(물가)",
+    desc: "소비자물가=인플레이션. 연준 정책금리의 핵심 변수",
+    url: "https://fred.stlouisfed.org/series/CPIAUCSL",
+    note: "FRED",
   },
 ];
 
@@ -71,42 +87,57 @@ function isMacroAsset(a) {
 function renderMacroStrip() {
   const el = document.getElementById("macro-strip");
   if (!el) return;
-  const assets = (DATA.latest && DATA.latest.assets) || [];
-  const macros = assets.filter(isMacroAsset);
-  macros.sort(
-    (a, b) => MACRO_ORDER.indexOf(a.code) - MACRO_ORDER.indexOf(b.code)
-  );
-  const chips = macros.map((a) => {
-    if (a.error) {
-      return `<span class="macro-chip macro-err">${escapeHtml(a.name)} · 오류</span>`;
-    }
-    const chg = a.change_pct;
-    const chgHtml =
-      chg == null
-        ? ""
-        : ` <span class="${chg >= 0 ? "pos" : "neg"}">${
-            chg >= 0 ? "+" : ""
-          }${chg.toFixed(2)}%</span>`;
-    const url = MACRO_LINKS[a.code];
-    const body = `<span class="macro-name">${escapeHtml(
+  const macros = ((DATA.latest && DATA.latest.assets) || []).filter(isMacroAsset);
+  macros.sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+  const cards = macros.map(macroCardHtml);
+  MACRO_LINK_ONLY.forEach((m) => cards.push(macroLinkOnlyHtml(m)));
+  el.innerHTML = cards.join("");
+}
+
+function macroCardHtml(a) {
+  if (a.error) {
+    return `<div class="macro-card"><div class="macro-top"><span class="macro-name">${escapeHtml(
       a.name
-    )}</span> <span class="macro-val">${fmtNum(a.close)}</span>${chgHtml}<span class="macro-ext" aria-hidden="true">↗</span>`;
-    return url
-      ? `<a class="macro-chip" href="${url}" target="_blank" rel="noopener" title="${escapeHtml(
-          a.name
-        )} 상세 차트 (외부, ${escapeHtml(a.date || "")} 기준)">${body}</a>`
-      : `<span class="macro-chip">${body}</span>`;
-  });
-  MACRO_LINK_ONLY.forEach((m) => {
-    chips.push(
-      `<a class="macro-chip macro-linkonly" href="${m.url}" target="_blank" rel="noopener" title="${escapeHtml(
-        m.name
-      )} (${escapeHtml(m.note)}, 외부)"><span class="macro-name">${escapeHtml(
-        m.name
-      )}</span><span class="macro-ext" aria-hidden="true">↗</span></a>`
-    );
-  });
-  el.innerHTML = chips.join("");
+    )}</span> <span class="macro-err">· 데이터 오류</span></div></div>`;
+  }
+  const chg = a.change_pct;
+  const chgHtml =
+    chg == null
+      ? ""
+      : ` <span class="${chg >= 0 ? "pos" : "neg"}">${
+          chg >= 0 ? "+" : ""
+        }${chg.toFixed(2)}%</span>`;
+  const unit =
+    a.currency && a.currency !== "-"
+      ? `<span class="macro-unit">${escapeHtml(a.currency)}</span>`
+      : "";
+  const top = `<span class="macro-name">${escapeHtml(
+    a.name
+  )}</span> <span class="macro-val">${fmtNum(
+    a.close
+  )}</span>${unit}${chgHtml}<span class="macro-ext" aria-hidden="true">↗</span>`;
+  const desc = a.product_group
+    ? `<div class="macro-desc">${escapeHtml(a.product_group)}</div>`
+    : "";
+  const inner = `<div class="macro-top">${top}</div>${desc}`;
+  return a.detail_url
+    ? `<a class="macro-card" href="${a.detail_url}" target="_blank" rel="noopener" title="${escapeHtml(
+        a.name
+      )} 상세 (외부, ${escapeHtml(a.date || "")} 기준)">${inner}</a>`
+    : `<div class="macro-card">${inner}</div>`;
+}
+
+function macroLinkOnlyHtml(m) {
+  const desc = m.desc
+    ? `<div class="macro-desc">${escapeHtml(m.desc)}</div>`
+    : "";
+  return `<a class="macro-card macro-linkonly" href="${m.url}" target="_blank" rel="noopener" title="${escapeHtml(
+    m.name
+  )} (${escapeHtml(m.note || "외부")})"><div class="macro-top"><span class="macro-name">${escapeHtml(
+    m.name
+  )}</span> <span class="macro-linktag">${escapeHtml(
+    m.note || "링크"
+  )}</span><span class="macro-ext" aria-hidden="true"> ↗</span></div>${desc}</a>`;
 }
 
 // 탭이 떠 있는 동안 주기적으로 최신 커밋 데이터를 다시 받아온다.

@@ -134,29 +134,51 @@ def A(so, grp, name, clabel, ticker, sector, sub, product, exp,
 # ---------------------------------------------------------------------------
 # 매크로 참고 지표(환율·금리·변동성) — 표가 아닌 상단 스트립 전용(disparity_meaningful=False).
 # ---------------------------------------------------------------------------
-def _macro(name, code, clabel, sub, product, url):
+def _macro(so, name, code, clabel, unit, sub, desc, url):
     cc = _CC[clabel]
     return {
         "name": name, "code": code, "yf_ticker": code, "market": cc,
         "country": cc, "country_label": clabel, "sector": sub,
         "asset_type": "fx" if code.endswith("=X") else "macro_index",
-        "source": "yfinance", "sort_order": 9000, "ai_group": "00_INDEX",
-        "ai_subgroup": sub, "product_group": product, "exposure_type": "BENCHMARK",
-        "listing_market": "-", "currency": "-", "price_source": "Yahoo Finance",
+        "source": "yfinance", "sort_order": so, "ai_group": "00_INDEX",
+        "ai_subgroup": sub, "product_group": desc, "exposure_type": "BENCHMARK",
+        "listing_market": "-", "currency": unit, "price_source": "Yahoo Finance",
         "is_adr": False, "local_ticker": None, "display_ticker": code,
         "detail_url": url, "disparity_meaningful": False, "note": None, "enabled": True,
     }
 
 
 ASSETS: List[Dict] = [
-    # ===== 매크로 참고(상단 스트립) =====
-    _macro("원/달러 환율", "KRW=X", "한국", "환율", "USD/KRW",
+    # ===== 매크로 참고(상단 스트립) — 값·등락은 야후, 상세는 링크. 이격도 판정 안 함 =====
+    _macro(9001, "원/달러 환율", "KRW=X", "한국", "원", "환율",
+           "원화 가치. 상승=원화 약세(수출주 유리·외국인 매도 압력·수입물가↑)",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"),
-    _macro("엔/달러 환율", "JPY=X", "일본", "환율", "USD/JPY",
+    _macro(9002, "엔/달러 환율", "JPY=X", "일본", "엔", "환율",
+           "엔화 가치. 엔 약세=일본 수출주 유리·엔캐리 트레이드 확대 신호",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY"),
-    _macro("美 국채 10년 금리", "^TNX", "미국", "금리", "미국 10년물 국채 금리",
+    _macro(9003, "달러인덱스 DXY", "DX-Y.NYB", "미국", "pt", "환율",
+           "주요 6개 통화 대비 달러 강세. 상승=신흥국·원자재·위험자산에 역풍",
+           "https://www.investing.com/indices/usdollar"),
+    _macro(9004, "美 10년 국채금리", "^TNX", "미국", "%", "금리",
+           "미국 10년물 금리. 상승=성장주·기술주 밸류에이션 부담·할인율↑",
            "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield"),
-    _macro("VIX 변동성", "^VIX", "미국", "변동성", "S&P500 변동성 지수(공포)",
+    _macro(9005, "美 단기금리(13주)", "^IRX", "미국", "%", "금리",
+           "미국 13주 T-bill 금리. 연준 정책금리 방향 대용 지표",
+           "https://www.investing.com/rates-bonds/u.s.-3-month-bond-yield"),
+    _macro(9006, "WTI 유가", "CL=F", "미국", "$", "원자재",
+           "서부텍사스유 선물. 상승=인플레·에너지 비용↑, 경기·물가의 핵심 변수",
+           "https://www.investing.com/commodities/crude-oil"),
+    _macro(9007, "금", "GC=F", "미국", "$", "원자재",
+           "금 선물. 안전자산·인플레 헤지, 실질금리·달러와 역상관 경향",
+           "https://www.investing.com/commodities/gold"),
+    _macro(9008, "구리", "HG=F", "미국", "$", "원자재",
+           "구리 선물('닥터 코퍼'). 제조업·글로벌 경기의 선행 지표",
+           "https://www.investing.com/commodities/copper"),
+    _macro(9009, "비트코인", "BTC-USD", "미국", "$", "위험자산",
+           "위험자산·유동성 심리 바로미터. 급등락=리스크온/오프 신호",
+           "https://finance.yahoo.com/quote/BTC-USD"),
+    _macro(9010, "VIX 변동성", "^VIX", "미국", "pt", "변동성",
+           "S&P500 변동성('공포지수'). 급등=위험회피 심리 확대",
            "https://www.investing.com/indices/volatility-s-p-500"),
 
     # ===== 00 시장지수 =====
