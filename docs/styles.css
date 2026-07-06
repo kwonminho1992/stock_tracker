@@ -63,6 +63,9 @@ a { color: var(--accent); }
 .refresh-icon { display: inline-block; margin-right: 4px; }
 .refresh-btn.loading .refresh-icon { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.refresh-btn.done { border-color: var(--normal-fg); color: var(--normal-fg); }
+.checked-at { color: var(--text-dim); font-size: 0.72rem; margin-left: 8px; }
+.asset-name .exp-tag { margin-top: 0; margin-left: 6px; vertical-align: middle; }
 
 main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
 
@@ -232,16 +235,35 @@ td.col-order { color: var(--text-dim); font-size: 0.78rem; }
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
-  min-width: 1080px;
+  font-size: 0.82rem;
+  table-layout: fixed; /* 열 폭을 고정해 한 화면에 맞춘다(좌우 스크롤 방지) */
 }
 th, td {
-  padding: 9px 10px;
+  padding: 7px 8px;
   text-align: left;
   border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
-th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* 열 폭(합계 ≈ 100%). table-layout:fixed 이라 이 폭대로 배분된다. */
+.col-country { width: 46px; }
+.col-name { width: 19%; }
+.col-cat { width: 11%; }
+.col-product { width: 20%; }
+.col-price { width: 9%; }
+.col-chg { width: 6.5%; }
+.col-d { width: 5.5%; }
+.col-zone { width: 8.5%; }
+.col-fresh { width: 8.5%; }
+td.cell-cat, td.cell-product { color: var(--text-dim); font-size: 0.78rem; }
+td.cell-fresh .asset-sub { white-space: nowrap; }
+
+/* 종목 셀: 이름 + 티커링크·ADR + 섹터 */
+.asset-meta { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; }
+.asset-sub-inline { color: var(--text-dim); }
 td.metric-primary {
   color: var(--text);
   font-weight: 700;
@@ -259,9 +281,10 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
 
 .zone-pill {
   display: inline-block;
-  padding: 2px 9px;
+  padding: 2px 8px;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
 }
 .zone-ref { background: var(--panel-2); color: var(--text-dim); border: 1px solid var(--border); }
 .zone-na { color: var(--text-dim); }
@@ -405,4 +428,20 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   /* 경고 칸은 내용이 있을 때만 보이도록 */
   #latest-table td.cell-warn:empty { display: none; }
   #latest-table td .basis-note { margin-top: 0; }
+
+  /* 카드 가독성: 종목명 크게, 현재가 강조 */
+  #latest-table td { font-size: 0.86rem; }
+  #latest-table td.cell-name .asset-name { font-size: 1rem; }
+  #latest-table td.cell-name .asset-meta { font-size: 0.74rem; }
+  #latest-table td[data-label="현재가"] {
+    font-size: 1.05rem;
+    font-weight: 700;
+    align-items: center;
+    margin-top: 2px;
+  }
+  #latest-table td[data-label="현재가"]::before { font-size: 0.78rem; font-weight: 500; }
+  #latest-table td[data-label="현재가"] .cur { font-weight: 400; }
+  #latest-table td.cell-product { text-align: right; }
+  /* 표 카드에서는 티커 링크 줄바꿈 허용 */
+  .ticker-link { white-space: normal; }
 }

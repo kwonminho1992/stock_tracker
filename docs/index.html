@@ -16,6 +16,7 @@
       <button id="refresh-btn" class="refresh-btn" type="button" title="최신 데이터 다시 불러오기">
         <span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">새로고침</span>
       </button>
+      <span id="checked-at" class="checked-at"></span>
     </p>
   </header>
 
@@ -98,23 +99,21 @@
         <table id="latest-table">
           <thead>
             <tr>
-              <th class="num">#</th>
-              <th>국가</th>
-              <th>이름</th>
-              <th>티커</th>
-              <th>AI 병목그룹</th>
-              <th>주요 제품군/분야</th>
-              <th class="num">현재가</th>
-              <th class="num">등락률</th>
-              <th class="num" title="25일 이동평균 대비 이격도(%). 개별종목 판정 기준">25일</th>
-              <th class="num" title="50일 이동평균 대비 이격도(%). 지수 판정 기준">50일</th>
-              <th class="num" title="120일 이동평균 대비 이격도(%). 중기 추세 참고">120일</th>
-              <th title="판정 이격도 기준 과열 구간">과열</th>
-              <th title="데이터 기준일과 품질 경고">최신성</th>
+              <th class="col-country">국가</th>
+              <th class="col-name">종목</th>
+              <th class="col-cat">분류</th>
+              <th class="col-product">제품군/분야</th>
+              <th class="num col-price">현재가</th>
+              <th class="num col-chg">등락률</th>
+              <th class="num col-d" title="25일 이동평균 대비 이격도(%). 개별종목 판정 기준">25일</th>
+              <th class="num col-d" title="50일 이동평균 대비 이격도(%). 지수 판정 기준">50일</th>
+              <th class="num col-d col-d120" title="120일 이동평균 대비 이격도(%). 중기 추세 참고">120일</th>
+              <th class="col-zone" title="판정 이격도 기준 과열 구간">과열</th>
+              <th class="col-fresh" title="데이터 기준일과 품질 경고">최신성</th>
             </tr>
           </thead>
           <tbody id="latest-tbody">
-            <tr><td colspan="13" class="loading">데이터 불러오는 중…</td></tr>
+            <tr><td colspan="11" class="loading">데이터 불러오는 중…</td></tr>
           </tbody>
         </table>
       </div>
@@ -135,8 +134,8 @@
 
   <footer class="site-footer">
     <p class="sources">
-      데이터 출처: 국내 지수·개별종목 일부 = <strong>KRX (pykrx)</strong> ·
-      해외/일본 지수·종목 및 일부 섹터지수 = <strong>Yahoo Finance (yfinance)</strong>.
+      데이터 출처: 국내(KRX) 지수·종목 = <strong>FinanceDataReader</strong> ·
+      해외 지수·종목 = <strong>Yahoo Finance (yfinance)</strong>.
       GitHub Actions에서 평일 1시간마다 자동 갱신됩니다.
       <strong>장중/스케줄 갱신</strong> 시에는 국내 개별종목은 KRX 히스토리에 Yahoo Finance 최신가를 보강하고,
       그 외 자산은 Yahoo Finance 지연시세로 계산합니다.

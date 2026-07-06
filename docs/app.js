@@ -195,6 +195,11 @@ async function refreshData(manual) {
   }
   try {
     await loadData();
+    if (manual && btn) {
+      // 수동 새로고침 완료를 잠깐 표시(데이터가 그대로여도 동작했음을 확인).
+      btn.classList.add("done");
+      setTimeout(() => btn.classList.remove("done"), 1200);
+    }
   } finally {
     if (btn) {
       btn.dataset.loading = "0";
@@ -220,7 +225,7 @@ async function loadData() {
     renderChart();
   } catch (err) {
     document.getElementById("latest-tbody").innerHTML =
-      `<tr><td colspan="13" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
+      `<tr><td colspan="11" class="loading">데이터를 불러오지 못했습니다: ${escapeHtml(
         String(err)
       )}</td></tr>`;
   }
@@ -240,6 +245,12 @@ function renderHeader() {
   el.textContent = updated
     ? `업데이트: ${formatDateTime(updated)}${relAge(updated)}`
     : "업데이트 시각 없음 (아직 데이터가 생성되지 않았습니다)";
+  // 마지막으로 서버 데이터를 다시 확인한 시각(새로고침이 실제로 동작함을 보여줌).
+  const chk = document.getElementById("checked-at");
+  if (chk) {
+    const now = new Date();
+    chk.textContent = `확인: ${now.toLocaleTimeString("ko-KR", { hour12: false })}`;
+  }
   const rt = document.getElementById("run-type");
   const runType = DATA.latest && DATA.latest.run_type;
   rt.textContent =
@@ -258,14 +269,14 @@ function renderTable() {
   }));
   if (all.length === 0) {
     tbody.innerHTML =
-      `<tr><td colspan="13" class="loading">표시할 데이터가 없습니다.</td></tr>`;
+      `<tr><td colspan="11" class="loading">표시할 데이터가 없습니다.</td></tr>`;
     return;
   }
   // 매크로 지표(환율·금리·VIX)는 상단 스트립에서 보여주므로 표에서 제외.
   const assets = all.filter((a) => !isMacroAsset(a) && matchesFilter(a));
   if (assets.length === 0) {
     tbody.innerHTML =
-      `<tr><td colspan="13" class="loading">해당 조건의 자산이 없습니다.</td></tr>`;
+      `<tr><td colspan="11" class="loading">해당 조건의 자산이 없습니다.</td></tr>`;
     return;
   }
 
@@ -340,7 +351,7 @@ function groupHeaderHtml(group, counts) {
       parts.push(`<span class="gh-caut">경계 ${counts.caution}</span>`);
     badge = ` <span class="gh-badge">${parts.join(" ")}</span>`;
   }
-  return `<tr class="group-header"><td colspan="13">${escapeHtml(
+  return `<tr class="group-header"><td colspan="11">${escapeHtml(
     num
   )} · ${escapeHtml(label)}${badge}</td></tr>`;
 }
@@ -399,16 +410,20 @@ function currencyTag(a) {
   return ` <span class="cur">${escapeHtml(a.currency)}</span>`;
 }
 
+function nameCellHtml(a) {
+  // 종목명(+중요도) / 티커 링크·ADR / 섹터 를 한 칸에 묶는다.
+  return `<div class="asset-name">${escapeHtml(a.name)}${exposureTag(a)}</div>
+    <div class="asset-meta">${tickerCellHtml(a)}<span class="asset-sub-inline"> · ${escapeHtml(
+    a.sector || ""
+  )}</span></div>`;
+}
+
 function rowHtml(a) {
-  // 데이터 오류 자산 (4칸 + colspan 9 = 13)
+  // 데이터 오류 자산 (국가+종목 2칸 + colspan 9 = 11)
   if (a.error) {
     return `<tr class="row-error" data-code="${escapeHtml(a.code)}">
-      <td class="num col-order cell-secondary" data-label="#">${a.sort_order ?? ""}</td>
       <td data-label="국가">${countryCellHtml(a)}</td>
-      <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
-        a.name
-      )}</div>${exposureTag(a)}</td>
-      <td data-label="티커">${tickerCellHtml(a)}</td>
+      <td class="cell-name" data-label="종목">${nameCellHtml(a)}</td>
       <td colspan="9" data-label="오류"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
         a.error
       )}</td>
@@ -425,21 +440,13 @@ function rowHtml(a) {
   if (a.is_suspicious)
     warns.push(`<span class="warn-tag warn-suspicious">확인필요</span>`);
 
-  const groupCell = `<div>${escapeHtml(
-    AI_GROUP_LABELS[a.ai_group] || a.ai_group || "-"
-  )}</div><div class="asset-sub">${escapeHtml(a.ai_subgroup || "")}</div>`;
-
   return `<tr data-code="${escapeHtml(a.code)}" title="${escapeHtml(
     a.note || a.warning || ""
   )}">
-    <td class="num col-order cell-secondary" data-label="#">${a.sort_order ?? ""}</td>
     <td data-label="국가">${countryCellHtml(a)}</td>
-    <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
-      a.name
-    )}</div><div class="asset-sub">${escapeHtml(a.sector || "")}</div>${exposureTag(a)}</td>
-    <td data-label="티커">${tickerCellHtml(a)}</td>
-    <td data-label="AI 병목그룹">${groupCell}</td>
-    <td data-label="주요 제품군">${escapeHtml(a.product_group || "")}</td>
+    <td class="cell-name" data-label="종목">${nameCellHtml(a)}</td>
+    <td class="cell-cat" data-label="분류">${escapeHtml(a.ai_subgroup || "")}</td>
+    <td class="cell-product" data-label="제품군/분야">${escapeHtml(a.product_group || "")}</td>
     <td class="num" data-label="현재가">${fmtNum(a.close)}${currencyTag(a)}${extendedHtml(a)}</td>
     <td class="num ${changeCls}" data-label="등락률">${changeTxt}</td>
     <td class="num ${primaryMetricClass(a, 25)}" data-label="25일">${fmtDisp(
@@ -448,9 +455,9 @@ function rowHtml(a) {
     <td class="num ${primaryMetricClass(a, 50)}" data-label="50일">${fmtDisp(
       a.disparity50
     )}</td>
-    <td class="num" data-label="120일">${fmtDisp(a.disparity120)}</td>
+    <td class="num cell-d120" data-label="120일">${fmtDisp(a.disparity120)}</td>
     <td data-label="과열">${zoneCellHtml(a)}</td>
-    <td data-label="최신성"><div class="asset-sub">${escapeHtml(
+    <td class="cell-fresh" data-label="최신성"><div class="asset-sub">${escapeHtml(
       a.date || ""
     )}</div>${warns.join(" ")}</td>
   </tr>`;
