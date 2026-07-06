@@ -20,14 +20,17 @@ on:
 permissions:
   contents: write
 
-# 동시에 한 번만 실행(겹치는 실행은 큐잉, 진행 중인 건 취소하지 않음)
+# 동시에 한 번만 실행. 새 실행이 뜨면 멎었을 수 있는 이전 실행을 취소하고
+# 최신 데이터로 진행한다(데이터 갱신은 최신이 우선 → 큐 정체 자가 치유).
 concurrency:
   group: update-market-disparity
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    # 멎은 실행이 6시간(기본)까지 매달려 concurrency 큐를 막지 않도록 상한을 둔다.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4

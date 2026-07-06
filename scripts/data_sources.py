@@ -201,13 +201,53 @@ def _attach_extended_quote(info: Dict, out: pd.DataFrame) -> None:
             out.attrs["extended_change_pct"] = float(change)
 
 
-def _fetch_yf(ticker: str, want_extended: bool = False) -> pd.DataFrame:
+def _utc_hour() -> int:
+    from datetime import timezone
+
+    return datetime.now(timezone.utc).hour
+
+
+def _in_us_extended_window() -> bool:
+    """미국 프리/애프터마켓이 열려있을 만한 UTC 시간대(EST/EDT 여유 포함).
+
+    프리 04:00-09:30 ET → 대략 08:00-14:00 UTC, 애프터 16:00-20:00 ET → 20:00-01:00 UTC.
+    정규장(14:30-21:00 UTC)엔 pre/post 가 없으므로 이 구간이 아니면 .info 를 건너뛴다.
+    """
+    h = _utc_hour()
+    return (8 <= h < 15) or (h >= 20) or (h <= 1)
+
+
+def _in_kr_market_window() -> bool:
+    """KRX 정규장(09:00-15:30 KST = 00:00-06:30 UTC) 여유 포함."""
+    return _utc_hour() < 8
+
+
+def wants_extended_quote(asset: Dict) -> bool:
+    """프리/애프터마켓 시세를 받을 대상인지: 미국 상장 개별종목(미국주 + TSMC ADR)."""
+    return asset.get("market") == "US" and str(asset.get("asset_type", "")).endswith(
+        "_stock"
+    )
+
+
+def wants_reconcile(asset: Dict) -> bool:
+    """쿼트 정합(.info)이 필요한 대상: 지수·환율·매크로(차트 일봉이 지연되는 부류).
+
+    개별종목은 yf.download 당일봉으로 충분하므로 .info 를 부르지 않는다(CI 속도·안정성).
+    """
+    t = str(asset.get("asset_type", ""))
+    return t.endswith("_index") or t in ("fx", "macro_index")
+
+
+def _fetch_yf(
+    ticker: str, want_extended: bool = False, want_reconcile: bool = False
+) -> pd.DataFrame:
     """yfinance 일봉을 받아 표준 DataFrame 으로 반환.
 
     장중에 호출하면 당일(진행중) 봉의 Close 가 '현재가(지연시세)'로 채워지므로,
     종가 모드와 장중 모드가 같은 함수를 공유한다.
 
-    want_extended=True 면(미국 상장 종목) 프리/애프터마켓 시세도 attrs 에 보강한다.
+    무거운 Ticker().info 는 필요할 때만(want_extended=프리/넥장, want_reconcile=지수 정합)
+    호출한다 → 대량 자산에서 CI 속도·throttling 문제를 줄인다.
     """
     try:
         import yfinance as yf
@@ -230,36 +270,32 @@ def _fetch_yf(ticker: str, want_extended: bool = False) -> pd.DataFrame:
     close = _extract_close_from_yf(df, ticker)
     out = _standardize(close, f"yfinance {ticker}")
 
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            info = yf.Ticker(ticker).info or {}
-        # 차트 일봉이 뒤처졌으면 쿼트로 최신화(지수 며칠 지연·유령 봉 방어).
-        _reconcile_with_quote(info, out, f"yfinance {ticker}")
-        previous_close = info.get("regularMarketPreviousClose")
-        if previous_close is not None and pd.notna(previous_close):
-            out.attrs["latest_previous_close"] = float(previous_close)
-        if want_extended:
-            _attach_extended_quote(info, out)
-    except Exception:
-        # quote 메타데이터가 실패해도 일봉 계산은 계속 진행한다.
-        pass
+    if want_extended or want_reconcile:
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                info = yf.Ticker(ticker).info or {}
+            if want_reconcile:
+                # 차트 일봉이 뒤처졌으면 쿼트로 최신화(지수 며칠 지연·유령 봉 방어).
+                _reconcile_with_quote(info, out, f"yfinance {ticker}")
+            previous_close = info.get("regularMarketPreviousClose")
+            if previous_close is not None and pd.notna(previous_close):
+                out.attrs["latest_previous_close"] = float(previous_close)
+            if want_extended:
+                _attach_extended_quote(info, out)
+        except Exception:
+            # quote 메타데이터가 실패해도 일봉 계산은 계속 진행한다.
+            pass
 
     return out
-
-
-def wants_extended_quote(asset: Dict) -> bool:
-    """프리/애프터마켓 시세를 받을 대상인지: 미국 상장 개별종목(미국주 + TSMC ADR)."""
-    return asset.get("market") == "US" and str(asset.get("asset_type", "")).endswith(
-        "_stock"
-    )
 
 
 def fetch_us(asset: Dict) -> pd.DataFrame:
     """해외 지수/종목: yfinance 사용(yf_ticker 없으면 code 사용)."""
     return _fetch_yf(
         asset.get("yf_ticker") or asset["code"],
-        want_extended=wants_extended_quote(asset),
+        want_extended=wants_extended_quote(asset) and _in_us_extended_window(),
+        want_reconcile=wants_reconcile(asset),
     )
 
 
@@ -275,6 +311,10 @@ def fetch_kr_intraday(asset: Dict) -> pd.DataFrame:
         out = fetch_kr_stock(asset).copy()
     else:
         out = fetch_kr_index(asset).copy()
+
+    # KRX 장 시간이 아니면 FDR 에 이미 당일 종가가 있으므로 .info 를 건너뛴다.
+    if not _in_kr_market_window():
+        return out
 
     try:
         import yfinance as yf
@@ -323,7 +363,11 @@ def fetch_asset(asset: Dict, run_type: str = "close") -> pd.DataFrame:
             "krx_stock",
         ):
             return fetch_kr_intraday(asset)
-        return _fetch_yf(yf_ticker, want_extended=wants_extended_quote(asset))
+        return _fetch_yf(
+            yf_ticker,
+            want_extended=wants_extended_quote(asset) and _in_us_extended_window(),
+            want_reconcile=wants_reconcile(asset),
+        )
 
     source = asset.get("source")
     fetcher = _FETCHERS.get(source)
