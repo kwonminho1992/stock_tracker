@@ -18,6 +18,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -77,16 +78,56 @@ main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
   border: 1px solid var(--border);
 }
 
-/* 매크로 참고 지표 (환율·금리·원자재·통화량 등 → 값+해설, 상세는 외부 링크) */
-.macro-section { margin: 0 0 18px; }
-.macro-title { color: var(--text-dim); font-size: 0.8rem; display: block; margin-bottom: 8px; }
+/* 매크로 참고 지표 (금리·물가·유동성·원자재/심리 묶음, 기본 접힘) */
+.macro-section { margin: 0 0 14px; }
+.macro-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.macro-toggle:hover { border-color: var(--accent); }
+.macro-title {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.macro-summary {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.macro-toggle-text {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
 .macro-strip {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+  margin-top: 10px;
 }
 .macro-group {
   min-width: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
 }
 .macro-group-title {
   color: var(--accent);
@@ -96,12 +137,13 @@ main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
 }
 .macro-group-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
   gap: 8px;
 }
 .macro-card {
   display: block;
-  padding: 8px 12px;
+  min-width: 0;
+  padding: 7px 10px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -109,7 +151,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
   text-decoration: none;
 }
 a.macro-card:hover { border-color: var(--accent); }
-.macro-top { font-size: 0.84rem; }
+.macro-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 4px;
+  font-size: 0.82rem;
+  min-width: 0;
+}
 .macro-name { font-weight: 500; }
 .macro-val { font-variant-numeric: tabular-nums; font-weight: 700; }
 .macro-unit { font-size: 0.68rem; color: var(--text-dim); margin-left: 3px; }
@@ -122,7 +171,16 @@ a.macro-card:hover { border-color: var(--accent); }
   margin-left: 5px;
 }
 .macro-ext { color: var(--text-dim); font-size: 0.72rem; margin-left: 3px; }
-.macro-desc { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+.macro-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+  line-height: 1.35;
+}
 .macro-err { color: var(--overheat-fg); }
 .macro-linkonly { border-style: dashed; }
 .macro-linktag {
@@ -392,6 +450,30 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   .site-header h1 { font-size: 1.25rem; }
   main { padding: 8px 14px 40px; }
   .card { padding: 12px; }
+  .macro-section { margin-bottom: 12px; }
+  .macro-toggle {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 8px 10px;
+  }
+  .macro-title { font-size: 0.86rem; }
+  .macro-summary {
+    order: 3;
+    flex-basis: 100%;
+    white-space: normal;
+    font-size: 0.74rem;
+  }
+  .macro-toggle-text {
+    margin-left: auto;
+    font-size: 0.72rem;
+  }
+  .macro-strip { gap: 10px; }
+  .macro-group { padding-top: 7px; }
+  .macro-group-grid { grid-template-columns: 1fr; gap: 6px; }
+  .macro-card { padding: 7px 9px; border-radius: 7px; }
+  .macro-top { font-size: 0.8rem; }
+  .macro-desc { font-size: 0.68rem; -webkit-line-clamp: 2; }
   .section-controls { margin-bottom: 10px; }
   .chart-wrap { height: 340px; }
   .chart-caption { font-size: 0.8rem; }

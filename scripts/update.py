@@ -475,7 +475,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     latest_records, history_map = run(assets, today=today, run_type=run_type)
     macro_records = build_macro_records()
     latest_records.extend(macro_records)
-    log(f"매크로 참고 지표 {len(macro_records)}개 추가(FRED/API 또는 링크 전용)")
+    fred_values = sum(1 for r in macro_records if r.get("source") == "fred")
+    fred_fallbacks = sum(
+        1 for r in macro_records if r.get("source") == "FRED" and r.get("link_only")
+    )
+    link_only = sum(1 for r in macro_records if r.get("link_only"))
+    log(
+        f"매크로 참고 지표 {len(macro_records)}개 추가 "
+        f"(FRED 값 {fred_values}개 / FRED 링크대체 {fred_fallbacks}개 / 링크전용 {link_only}개)"
+    )
     ok = count_ok(latest_records)
     err = len(latest_records) - ok
     stale = sum(1 for r in latest_records if r.get("is_stale"))

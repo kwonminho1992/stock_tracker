@@ -32,9 +32,19 @@
       고정 기준선은 빠른 비교용 참고선이며 종목의 변동성·추세에 따라 해석이 달라질 수 있습니다.
     </p>
 
-    <section class="macro-section" aria-label="매크로 참고 지표">
-      <span class="macro-title">매크로 참고</span>
-      <div id="macro-strip" class="macro-strip">
+    <section class="macro-section macro-collapsed" aria-label="매크로 참고 지표">
+      <button
+        id="macro-toggle"
+        class="macro-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="macro-strip"
+      >
+        <span class="macro-title">매크로 참고</span>
+        <span id="macro-summary" class="macro-summary">불러오는 중…</span>
+        <span id="macro-toggle-text" class="macro-toggle-text">펼치기</span>
+      </button>
+      <div id="macro-strip" class="macro-strip" hidden>
         <span class="macro-chip">불러오는 중…</span>
       </div>
     </section>

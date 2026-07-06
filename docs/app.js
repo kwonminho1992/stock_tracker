@@ -18,6 +18,7 @@ let filterCountry = "ALL"; // ALL | KR | US | JP | TW | EU
 let filterZone = "ALL"; // ALL | overheat | caution | normal | cooldown
 let filterGroup = "ALL"; // ALL | 00_INDEX | 01_AI_COMPUTE_ASIC | ...
 let filterExposure = "ALL"; // ALL | CORE | SECONDARY | INDIRECT | BENCHMARK | HIGH_RISK
+let macroExpanded = false;
 
 // 화면 표시용 라벨
 const AI_GROUP_LABELS = {
@@ -46,29 +47,60 @@ const EXPOSURE_LABELS = {
 
 // 매크로 지표(이격도 무관: disparity_meaningful=false)는 표가 아닌 상단 카드에
 // 현재값·해설을 보여주고, 상세는 외부 사이트 링크로 연결한다.
-const MACRO_GROUP_LABELS = {
-  fx: "환율",
-  rates: "시장금리",
-  policy: "기준금리",
-  cpi: "소비자물가",
-  ppi: "생산자물가",
-  money: "통화량",
-  commodity: "원자재",
-  risk: "위험심리",
-};
-const MACRO_GROUP_ORDER = [
-  "fx",
-  "rates",
-  "policy",
-  "cpi",
-  "ppi",
-  "money",
-  "commodity",
-  "risk",
+const MACRO_BUCKETS = [
+  { id: "rates", label: "금리·기준금리", groups: ["rates", "policy"] },
+  { id: "prices", label: "물가(CPI·PPI)", groups: ["cpi", "ppi"] },
+  { id: "liquidity", label: "환율·유동성", groups: ["fx", "money"] },
+  { id: "risk", label: "원자재·위험심리", groups: ["commodity", "risk"] },
 ];
 
 function isMacroAsset(a) {
   return a && a.disparity_meaningful === false;
+}
+
+function setupMacroToggle() {
+  const btn = document.getElementById("macro-toggle");
+  macroExpanded = false;
+  if (btn) {
+    btn.addEventListener("click", () => {
+      macroExpanded = !macroExpanded;
+      syncMacroToggle();
+    });
+  }
+  syncMacroToggle();
+}
+
+function syncMacroToggle() {
+  const section = document.querySelector(".macro-section");
+  const strip = document.getElementById("macro-strip");
+  const btn = document.getElementById("macro-toggle");
+  const text = document.getElementById("macro-toggle-text");
+  if (section) section.classList.toggle("macro-collapsed", !macroExpanded);
+  if (strip) strip.hidden = !macroExpanded;
+  if (btn) btn.setAttribute("aria-expanded", macroExpanded ? "true" : "false");
+  if (text) text.textContent = macroExpanded ? "접기" : "펼치기";
+}
+
+function macroBucketFor(group) {
+  return (
+    MACRO_BUCKETS.find((bucket) => bucket.groups.includes(group)) || {
+      id: "other",
+      label: "기타",
+      groups: [group],
+    }
+  );
+}
+
+function updateMacroSummary(macros) {
+  const el = document.getElementById("macro-summary");
+  if (!el) return;
+  if (!macros.length) {
+    el.textContent = "표시할 지표 없음";
+    return;
+  }
+  const fredValues = macros.filter((m) => m.source === "fred").length;
+  const linkOnly = macros.filter((m) => m.link_only).length;
+  el.textContent = `${macros.length}개 · FRED 값 ${fredValues}개 · 링크 ${linkOnly}개`;
 }
 
 function renderMacroStrip() {
@@ -76,28 +108,27 @@ function renderMacroStrip() {
   if (!el) return;
   const macros = ((DATA.latest && DATA.latest.assets) || []).filter(isMacroAsset);
   macros.sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+  updateMacroSummary(macros);
   if (macros.length === 0) {
     el.innerHTML = `<span class="macro-chip">표시할 매크로 지표가 없습니다</span>`;
     return;
   }
-  const groups = new Map();
+  const buckets = new Map(MACRO_BUCKETS.map((bucket) => [bucket.id, { ...bucket, items: [] }]));
   macros.forEach((m) => {
     const g = m.macro_group || m.ai_subgroup || "other";
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g).push(m);
+    const bucket = macroBucketFor(g);
+    if (!buckets.has(bucket.id)) buckets.set(bucket.id, { ...bucket, items: [] });
+    buckets.get(bucket.id).items.push(m);
   });
-  const orderedGroups = Array.from(groups.keys()).sort((a, b) => {
-    const ia = MACRO_GROUP_ORDER.indexOf(a);
-    const ib = MACRO_GROUP_ORDER.indexOf(b);
-    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
-  });
-  el.innerHTML = orderedGroups
-    .map((group) => {
-      const cards = groups.get(group).map((m) =>
+  el.innerHTML = Array.from(buckets.values())
+    .filter((bucket) => bucket.items.length > 0)
+    .map((bucket) => {
+      bucket.items.sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+      const cards = bucket.items.map((m) =>
         m.link_only ? macroLinkOnlyHtml(m) : macroCardHtml(m)
       );
       return `<div class="macro-group"><div class="macro-group-title">${escapeHtml(
-        MACRO_GROUP_LABELS[group] || group
+        bucket.label
       )}</div><div class="macro-group-grid">${cards.join("")}</div></div>`;
     })
     .join("");
@@ -159,6 +190,7 @@ const AUTO_REFRESH_MS = 5 * 60 * 1000;
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  setupMacroToggle();
   document
     .getElementById("sort-by-disparity")
     .addEventListener("change", (e) => {
