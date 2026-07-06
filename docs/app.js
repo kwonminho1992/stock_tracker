@@ -22,21 +22,24 @@ let filterExposure = "ALL"; // ALL | CORE | SECONDARY | INDIRECT | BENCHMARK | H
 // 화면 표시용 라벨
 const AI_GROUP_LABELS = {
   "00_INDEX": "시장지수",
-  "01_AI_COMPUTE_ASIC": "AI 연산·ASIC",
-  "02_MEMORY_STORAGE": "메모리·스토리지",
-  "03_FOUNDRY_MANUFACTURING": "파운드리·제조",
-  "04_EQUIPMENT_TEST": "장비·테스트",
-  "05_PACKAGING_SUBSTRATE_PCB": "패키징·기판·PCB",
-  "06_MLCC_PASSIVE_COMPONENT": "MLCC·수동부품",
-  "07_NETWORK_OPTICAL": "네트워크·광",
-  "08_POWER_COOLING_GRID": "전력·냉각·그리드",
-  "09_AI_SERVER_ODM": "AI 서버·ODM",
-  "10_INDIRECT_HOLDING": "간접·지주",
+  "01_COMPUTE_ASIC": "AI 연산·ASIC",
+  "02_EDA_IP": "EDA·IP",
+  "03_MEMORY_STORAGE": "메모리·스토리지",
+  "04_FOUNDRY_MANUFACTURING": "파운드리·제조",
+  "05_EQUIPMENT_TEST": "장비·테스트",
+  "06_MATERIALS_WAFER": "소재·웨이퍼",
+  "07_PACKAGING_SUBSTRATE_PCB": "패키징·기판·PCB",
+  "08_MLCC_PASSIVE_COMPONENT": "MLCC·수동부품",
+  "09_NETWORK_OPTICAL": "네트워크·광",
+  "10_POWER_COOLING_GRID": "전력·냉각·그리드",
+  "11_AI_SERVER_ODM": "AI 서버·ODM",
+  "12_CLOUD_CAPEX": "클라우드·CAPEX",
 };
 const EXPOSURE_LABELS = {
   CORE: "핵심",
   SECONDARY: "2차",
-  INDIRECT: "간접",
+  SUPPORT: "보조",
+  DEMAND: "수요",
   BENCHMARK: "벤치마크",
   HIGH_RISK: "고위험",
 };
@@ -361,9 +364,39 @@ function exposureTag(a) {
 
 function countryCellHtml(a) {
   const country = a.country || a.market || "";
+  const label = a.country_label || countryLabel(country);
   return `<span class="country-tag c-${escapeHtml(country)}">${escapeHtml(
-    countryLabel(country)
+    label
   )}</span>`;
+}
+
+function tickerCellHtml(a) {
+  const t = escapeHtml(a.display_ticker || a.ticker || a.code);
+  const adr = a.is_adr
+    ? `<span class="adr-badge" title="ADR · 본주 ${escapeHtml(
+        a.local_ticker || ""
+      )}">ADR</span>`
+    : "";
+  const tip = [
+    a.listing_market,
+    a.currency && a.currency !== "-" ? a.currency : "",
+    a.price_source,
+    a.is_adr && a.local_ticker ? `본주 ${a.local_ticker}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const inner = `<code>${t}</code>`;
+  const link = a.detail_url
+    ? `<a class="ticker-link" href="${a.detail_url}" target="_blank" rel="noopener" title="${escapeHtml(
+        tip
+      )} · 상세 열기 ↗">${inner}<span class="ext-mark" aria-hidden="true">↗</span></a>`
+    : `<span title="${escapeHtml(tip)}">${inner}</span>`;
+  return link + adr;
+}
+
+function currencyTag(a) {
+  if (!a.currency || a.currency === "-") return "";
+  return ` <span class="cur">${escapeHtml(a.currency)}</span>`;
 }
 
 function rowHtml(a) {
@@ -375,7 +408,7 @@ function rowHtml(a) {
       <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
         a.name
       )}</div>${exposureTag(a)}</td>
-      <td data-label="티커"><code>${escapeHtml(a.ticker || a.code)}</code></td>
+      <td data-label="티커">${tickerCellHtml(a)}</td>
       <td colspan="9" data-label="오류"><span class="warn-tag warn-error">데이터 오류</span> ${escapeHtml(
         a.error
       )}</td>
@@ -404,10 +437,10 @@ function rowHtml(a) {
     <td class="cell-name" data-label="이름"><div class="asset-name">${escapeHtml(
       a.name
     )}</div><div class="asset-sub">${escapeHtml(a.sector || "")}</div>${exposureTag(a)}</td>
-    <td data-label="티커"><code>${escapeHtml(a.ticker || a.code)}</code></td>
+    <td data-label="티커">${tickerCellHtml(a)}</td>
     <td data-label="AI 병목그룹">${groupCell}</td>
     <td data-label="주요 제품군">${escapeHtml(a.product_group || "")}</td>
-    <td class="num" data-label="현재가">${fmtNum(a.close)}${extendedHtml(a)}</td>
+    <td class="num" data-label="현재가">${fmtNum(a.close)}${currencyTag(a)}${extendedHtml(a)}</td>
     <td class="num ${changeCls}" data-label="등락률">${changeTxt}</td>
     <td class="num ${primaryMetricClass(a, 25)}" data-label="25일">${fmtDisp(
       a.disparity25
@@ -661,7 +694,7 @@ function renderChart() {
 
 // ---- helpers ----
 function countryLabel(country) {
-  return { KR: "한국", JP: "일본", TW: "대만", US: "미국", EU: "유럽" }[country] || country;
+  return { KR: "한국", JP: "일본", TW: "대만", US: "미국", EU: "유럽", HK: "홍콩" }[country] || country;
 }
 function primaryMetricClass(a, window) {
   return Number(a.primary_window || 50) === window ? "metric-primary" : "";

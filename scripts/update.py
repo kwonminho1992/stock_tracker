@@ -82,6 +82,15 @@ def make_error_record(asset: Dict, message: str) -> Dict:
         "ai_subgroup": asset.get("ai_subgroup"),
         "product_group": asset.get("product_group"),
         "exposure_type": asset.get("exposure_type"),
+        "disparity_meaningful": asset.get("disparity_meaningful", True),
+        "country_label": asset.get("country_label"),
+        "listing_market": asset.get("listing_market"),
+        "currency": asset.get("currency"),
+        "price_source": asset.get("price_source"),
+        "is_adr": asset.get("is_adr", False),
+        "local_ticker": asset.get("local_ticker"),
+        "display_ticker": asset.get("display_ticker") or asset.get("yf_ticker") or asset.get("code"),
+        "detail_url": asset.get("detail_url"),
         "error": message,
     }
 

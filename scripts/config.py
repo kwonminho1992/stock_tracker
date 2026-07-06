@@ -1,183 +1,295 @@
 """중앙 설정 파일 — AI 병목 밸류체인 대시보드.
 
-추적 자산 목록, 이동평균 윈도우, 이격도 구간 기준을 한 곳에서 관리한다.
-새 종목을 추가하려면 ASSETS 리스트에 dict 한 줄만 추가하면 된다.
+자산은 빌더 A(...) 로 만든다. 티커 접미사로 상장시장·통화·시장을 자동 유추하고,
+국내(KRX)는 FinanceDataReader, 그 외는 yfinance 로 수집한다.
+상세 링크는 국내=네이버증권, 그 외=야후 파이낸스.
 """
 from __future__ import annotations
 
 from typing import Dict, List
 
 # ---------------------------------------------------------------------------
-# 이동평균 / 이격도 설정
+# 이동평균 / 이격도 / 구간 / 검증 / 수집범위
 # ---------------------------------------------------------------------------
-
-# 계산할 이동평균 기간(일). disparity{w} 가 각 윈도우마다 생성된다.
 MA_WINDOWS: List[int] = [20, 25, 50, 120]
-
-# 메인 판단 지표로 사용할 이격도 윈도우.
-# 개별종목은 25일, 지수/벤치마크는 50일 기준으로 과열 구간을 판단한다.
 STOCK_PRIMARY_WINDOW: int = 25
 DEFAULT_PRIMARY_WINDOW: int = 50
-
-# ---------------------------------------------------------------------------
-# 이격도 구간(zone) 기준
-#   개별종목: disparity25 기준 / 지수·벤치마크: disparity50 기준
-#   overheat  : 기준 이격도 >= 130            과열
-#   caution   : 120 <= 기준 이격도 < 130      경계
-#   normal    : 105 <  기준 이격도 < 120      정상
-#   cooldown  : 기준 이격도 <= 105            과열해소
-# ---------------------------------------------------------------------------
 
 ZONE_OVERHEAT_MIN: float = 130.0
 ZONE_CAUTION_MIN: float = 120.0
 ZONE_NORMAL_MIN: float = 105.0
-
 ZONE_LABELS: Dict[str, str] = {
-    "overheat": "과열",
-    "caution": "경계",
-    "normal": "정상",
-    "cooldown": "과열해소",
+    "overheat": "과열", "caution": "경계", "normal": "정상", "cooldown": "과열해소",
 }
-
-# ---------------------------------------------------------------------------
-# 데이터 검증 기준
-# ---------------------------------------------------------------------------
 
 SUSPICIOUS_DISPARITY_MIN: float = 50.0
 SUSPICIOUS_DISPARITY_MAX: float = 200.0
 STALE_DAYS: int = 7
-
-# ---------------------------------------------------------------------------
-# 데이터 수집 범위
-# ---------------------------------------------------------------------------
 
 KR_LOOKBACK_DAYS: int = 730
 US_PERIOD: str = "2y"
 HISTORY_DAYS: int = 365
 
 # ---------------------------------------------------------------------------
-# AI 병목 밸류체인 대분류(화면 정렬 순서). 표는 이 순서대로, 그룹 안에서는
-# sort_order 오름차순으로 표시한다.
+# AI 병목 밸류체인 대분류(화면 정렬 순서).
 # ---------------------------------------------------------------------------
-
 AI_GROUP_ORDER: List[str] = [
     "00_INDEX",
-    "01_AI_COMPUTE_ASIC",
-    "02_MEMORY_STORAGE",
-    "03_FOUNDRY_MANUFACTURING",
-    "04_EQUIPMENT_TEST",
-    "05_PACKAGING_SUBSTRATE_PCB",
-    "06_MLCC_PASSIVE_COMPONENT",
-    "07_NETWORK_OPTICAL",
-    "08_POWER_COOLING_GRID",
-    "09_AI_SERVER_ODM",
-    "10_INDIRECT_HOLDING",
+    "01_COMPUTE_ASIC",
+    "02_EDA_IP",
+    "03_MEMORY_STORAGE",
+    "04_FOUNDRY_MANUFACTURING",
+    "05_EQUIPMENT_TEST",
+    "06_MATERIALS_WAFER",
+    "07_PACKAGING_SUBSTRATE_PCB",
+    "08_MLCC_PASSIVE_COMPONENT",
+    "09_NETWORK_OPTICAL",
+    "10_POWER_COOLING_GRID",
+    "11_AI_SERVER_ODM",
+    "12_CLOUD_CAPEX",
 ]
 
 # ---------------------------------------------------------------------------
-# 추적 자산 목록
-#   name         : 화면에 표시할 이름
-#   code         : 식별 코드 (KRX 6자리 / yfinance 심볼)
-#   market       : 조회/상장 시장 "KR" | "US" | "JP" | "TW"
-#   country      : 화면 정렬·필터용 국적 "KR" | "US" | "JP" | "TW" | "EU"
-#   sector       : 화면 표시용 섹터
-#   asset_type   : "*_index" | "*_stock" | "fx"  (개별종목=25일, 그 외=50일 판정)
-#   source       : "yfinance" | "krx_stock" | "krx_index" | "custom"
-#   yf_ticker    : 장중(intraday)·해외 수집용 yfinance 심볼
-#   sort_order   : 화면 정렬용 숫자(그룹 내 오름차순)
-#   ai_group     : AI 병목 대분류(AI_GROUP_ORDER 중 하나)
-#   ai_subgroup  : 세부 하위분류
-#   product_group: 주요 제품군/분야 설명
-#   exposure_type: CORE | SECONDARY | INDIRECT | BENCHMARK | HIGH_RISK
-#   disparity_meaningful: False 면 이격도 과열 판정을 하지 않는다(환율·금리·변동성 등
-#                 가격 추세가 아닌 지표). 생략 시 True. 값은 참고용으로 계속 표시된다.
-#   note         : 짧은 설명(선택)
-#   enabled      : False 이면 수집에서 제외
+# 빌더 헬퍼
 # ---------------------------------------------------------------------------
+# 국가 라벨 → 필터용 국가코드 (독일·네덜란드·프랑스·스위스·오스트리아 = EU)
+_CC = {
+    "한국": "KR", "미국": "US", "일본": "JP", "대만": "TW", "유럽": "EU",
+    "독일": "EU", "네덜란드": "EU", "프랑스": "EU", "스위스": "EU",
+    "오스트리아": "EU", "홍콩": "HK",
+}
+_EXP = {
+    "벤치마크": "BENCHMARK", "핵심": "CORE", "2차": "SECONDARY",
+    "보조": "SUPPORT", "고위험": "HIGH_RISK", "수요": "DEMAND",
+}
+# 티커 접미사 → (상장시장코드, 상장시장표기, 통화). 긴 접미사 우선.
+_SUFFIX_INFO = [
+    (".TWO", "TW", "TPEx", "TWD"),
+    (".HK", "HK", "HKEX", "HKD"),
+    (".DE", "EU", "XETRA", "EUR"),
+    (".PA", "EU", "Euronext Paris", "EUR"),
+    (".AS", "EU", "Euronext Amsterdam", "EUR"),
+    (".VI", "EU", "Wiener Börse", "EUR"),
+    (".SW", "EU", "SIX", "CHF"),
+    (".TW", "TW", "TWSE", "TWD"),
+    (".T", "JP", "TSE", "JPY"),
+]
+
+
+def _infer_market(yf_ticker: str, country_code: str, source: str):
+    """(market, listing_market, currency) 를 티커/소스에서 유추."""
+    if source in ("krx_stock", "krx_index"):
+        return "KR", "KRX", "KRW"
+    if yf_ticker.startswith("^"):
+        idx = {
+            "KR": ("KR", "KRX", "KRW"), "JP": ("JP", "TSE", "JPY"),
+            "TW": ("TW", "TWSE", "TWD"), "US": ("US", "US Index", "USD"),
+        }
+        return idx.get(country_code, ("US", "US Index", "USD"))
+    for suf, mk, li, cur in _SUFFIX_INFO:
+        if yf_ticker.endswith(suf):
+            return mk, li, cur
+    return "US", "NASDAQ/NYSE", "USD"
+
+
+def A(so, grp, name, clabel, ticker, sector, sub, product, exp,
+      *, adr=False, local=None, disp=None, enabled=True, dm=True, note=None):
+    """자산 dict 빌더. clabel=국가 한글 라벨, ticker=화면표기 티커."""
+    cc = _CC[clabel]
+    is_index = ticker.startswith("^")
+    if clabel == "한국" and not is_index:
+        code = ticker.split(".")[0]           # 6자리 (FDR·네이버용)
+        yf = ticker                           # 000660.KS (쿼트 보강용)
+        source = "krx_stock"
+    elif clabel == "한국" and is_index:
+        code = yf = ticker
+        source = "krx_index"
+    else:
+        code = yf = ticker
+        source = "yfinance"
+
+    market, listing, currency = _infer_market(yf, cc, source)
+    asset_type = f"{cc.lower()}_index" if is_index else f"{market.lower()}_stock"
+
+    if cc == "KR" and not is_index:
+        detail_url = f"https://finance.naver.com/item/main.naver?code={code}"
+    else:
+        detail_url = f"https://finance.yahoo.com/quote/{yf}"
+    price_source = "KRX(FDR)+Yahoo" if source.startswith("krx") else "Yahoo Finance"
+
+    return {
+        "name": name, "code": code, "yf_ticker": yf,
+        "market": market, "country": cc, "country_label": clabel,
+        "sector": sector, "asset_type": asset_type, "source": source,
+        "sort_order": so, "ai_group": grp, "ai_subgroup": sub,
+        "product_group": product, "exposure_type": _EXP[exp],
+        "listing_market": listing, "currency": currency,
+        "price_source": price_source, "is_adr": adr,
+        "local_ticker": local, "display_ticker": disp or ticker,
+        "detail_url": detail_url, "disparity_meaningful": dm,
+        "note": note, "enabled": enabled,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 매크로 참고 지표(환율·금리·변동성) — 표가 아닌 상단 스트립 전용(disparity_meaningful=False).
+# ---------------------------------------------------------------------------
+def _macro(name, code, clabel, sub, product, url):
+    cc = _CC[clabel]
+    return {
+        "name": name, "code": code, "yf_ticker": code, "market": cc,
+        "country": cc, "country_label": clabel, "sector": sub,
+        "asset_type": "fx" if code.endswith("=X") else "macro_index",
+        "source": "yfinance", "sort_order": 9000, "ai_group": "00_INDEX",
+        "ai_subgroup": sub, "product_group": product, "exposure_type": "BENCHMARK",
+        "listing_market": "-", "currency": "-", "price_source": "Yahoo Finance",
+        "is_adr": False, "local_ticker": None, "display_ticker": code,
+        "detail_url": url, "disparity_meaningful": False, "note": None, "enabled": True,
+    }
+
 
 ASSETS: List[Dict] = [
-    # ===================== 00_INDEX : 지수·환율·금리 (BENCHMARK) =====================
-    {"name": "코스피", "code": "^KS11", "market": "KR", "country": "KR", "sector": "시장지수", "asset_type": "kr_index", "source": "krx_index", "yf_ticker": "^KS11", "sort_order": 1, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "한국 종합주가지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "코스피200", "code": "^KS200", "market": "KR", "country": "KR", "sector": "시장지수", "asset_type": "kr_index", "source": "krx_index", "yf_ticker": "^KS200", "sort_order": 2, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "코스피 대형주 지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "코스닥", "code": "^KQ11", "market": "KR", "country": "KR", "sector": "시장지수", "asset_type": "kr_index", "source": "krx_index", "yf_ticker": "^KQ11", "sort_order": 3, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "코스닥 종합지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "코스닥150", "code": "^KQ47", "market": "KR", "country": "KR", "sector": "시장지수", "asset_type": "kr_index", "source": "custom", "yf_ticker": "^KQ47", "sort_order": 4, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "코스닥 대형주 지수", "exposure_type": "BENCHMARK", "note": "yfinance 미제공(^KQ47 무응답) → custom source 필요", "enabled": False},
-    {"name": "닛케이225", "code": "^N225", "market": "JP", "country": "JP", "sector": "시장지수", "asset_type": "jp_index", "source": "yfinance", "yf_ticker": "^N225", "sort_order": 5, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "일본 대표 지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "TOPIX", "code": "^TOPX", "market": "JP", "country": "JP", "sector": "시장지수", "asset_type": "jp_index", "source": "custom", "yf_ticker": "^TOPX", "sort_order": 6, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "도쿄증시 전체 지수", "exposure_type": "BENCHMARK", "note": "yfinance 미제공(^TOPX 무응답) → custom source 필요", "enabled": False},
-    {"name": "대만 가권지수", "code": "^TWII", "market": "TW", "country": "TW", "sector": "시장지수", "asset_type": "tw_index", "source": "yfinance", "yf_ticker": "^TWII", "sort_order": 7, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "대만 가권 종합지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "S&P500", "code": "^GSPC", "market": "US", "country": "US", "sector": "시장지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^GSPC", "sort_order": 8, "ai_group": "00_INDEX", "ai_subgroup": "시장지수", "product_group": "미국 대형주 지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "나스닥100", "code": "^NDX", "market": "US", "country": "US", "sector": "시장지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^NDX", "sort_order": 9, "ai_group": "00_INDEX", "ai_subgroup": "기술주지수", "product_group": "나스닥 대형 기술주", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "PHLX 반도체", "code": "^SOX", "market": "US", "country": "US", "sector": "반도체 지수", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^SOX", "sort_order": 10, "ai_group": "00_INDEX", "ai_subgroup": "반도체지수", "product_group": "필라델피아 반도체 지수", "exposure_type": "BENCHMARK", "enabled": True},
-    {"name": "VIX 변동성", "code": "^VIX", "market": "US", "country": "US", "sector": "변동성", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^VIX", "sort_order": 11, "ai_group": "00_INDEX", "ai_subgroup": "변동성", "product_group": "S&P500 변동성 지수(공포)", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
-    {"name": "美 국채 10년 금리", "code": "^TNX", "market": "US", "country": "US", "sector": "금리", "asset_type": "us_index", "source": "yfinance", "yf_ticker": "^TNX", "sort_order": 12, "ai_group": "00_INDEX", "ai_subgroup": "금리", "product_group": "미국 10년물 국채 금리", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
-    {"name": "원/달러 환율", "code": "KRW=X", "market": "KR", "country": "KR", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "KRW=X", "sort_order": 13, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/KRW", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
-    {"name": "엔/달러 환율", "code": "JPY=X", "market": "JP", "country": "JP", "sector": "환율", "asset_type": "fx", "source": "yfinance", "yf_ticker": "JPY=X", "sort_order": 14, "ai_group": "00_INDEX", "ai_subgroup": "환율", "product_group": "USD/JPY", "exposure_type": "BENCHMARK", "disparity_meaningful": False, "enabled": True},
-    {"name": "닛케이 반도체지수", "code": "NKSCD_CUSTOM", "market": "JP", "country": "JP", "sector": "반도체 지수", "asset_type": "jp_index", "source": "custom", "yf_ticker": "NKSCD_CUSTOM", "sort_order": 15, "ai_group": "00_INDEX", "ai_subgroup": "반도체지수", "product_group": "Nikkei Semiconductor Stock Index", "exposure_type": "BENCHMARK", "note": "yfinance 직접 수집 불가 → custom source 필요", "enabled": False},
+    # ===== 매크로 참고(상단 스트립) =====
+    _macro("원/달러 환율", "KRW=X", "한국", "환율", "USD/KRW",
+           "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"),
+    _macro("엔/달러 환율", "JPY=X", "일본", "환율", "USD/JPY",
+           "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY"),
+    _macro("美 국채 10년 금리", "^TNX", "미국", "금리", "미국 10년물 국채 금리",
+           "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield"),
+    _macro("VIX 변동성", "^VIX", "미국", "변동성", "S&P500 변동성 지수(공포)",
+           "https://www.investing.com/indices/volatility-s-p-500"),
 
-    # ===================== 01_AI_COMPUTE_ASIC : AI 연산·ASIC =====================
-    {"name": "엔비디아", "code": "NVDA", "market": "US", "country": "US", "sector": "AI 가속기", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "NVDA", "sort_order": 100, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "GPU", "product_group": "데이터센터 GPU/AI 가속기", "exposure_type": "CORE", "enabled": True},
-    {"name": "AMD", "code": "AMD", "market": "US", "country": "US", "sector": "AI 가속기", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "AMD", "sort_order": 101, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "GPU/CPU", "product_group": "GPU·CPU·AI 가속기", "exposure_type": "CORE", "enabled": True},
-    {"name": "브로드컴", "code": "AVGO", "market": "US", "country": "US", "sector": "ASIC/네트워크", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "AVGO", "sort_order": 102, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "ASIC", "product_group": "커스텀 AI ASIC·AI 네트워킹", "exposure_type": "CORE", "note": "07 네트워크 축에도 해당", "enabled": True},
-    {"name": "마벨", "code": "MRVL", "market": "US", "country": "US", "sector": "ASIC/네트워크", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "MRVL", "sort_order": 103, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "ASIC", "product_group": "커스텀 ASIC·광 DSP", "exposure_type": "CORE", "note": "07 네트워크 축에도 해당", "enabled": True},
-    {"name": "미디어텍", "code": "2454.TW", "market": "TW", "country": "TW", "sector": "SoC", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2454.TW", "sort_order": 104, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "SoC", "product_group": "엣지 AI·모바일 SoC", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "알칩 테크놀로지", "code": "3661.TW", "market": "TW", "country": "TW", "sector": "ASIC 디자인", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "3661.TW", "sort_order": 105, "ai_group": "01_AI_COMPUTE_ASIC", "ai_subgroup": "ASIC 디자인하우스", "product_group": "AI ASIC 설계 서비스", "exposure_type": "HIGH_RISK", "enabled": True},
+    # ===== 00 시장지수 =====
+    A(1, "00_INDEX", "코스피", "한국", "^KS11", "시장지수", "시장지수", "한국 종합주가지수", "벤치마크"),
+    A(2, "00_INDEX", "코스피200", "한국", "^KS200", "시장지수", "대형주지수", "한국 대형주 벤치마크", "벤치마크"),
+    A(3, "00_INDEX", "코스닥", "한국", "^KQ11", "시장지수", "성장주지수", "한국 성장주/중소형주 심리", "보조"),
+    A(4, "00_INDEX", "TOPIX", "일본", "^TOPX", "시장지수", "일본전체지수", "일본 전체 시장 벤치마크", "벤치마크",
+      enabled=False, note="yfinance·FDR 미제공(^TOPX 무응답) → 비활성"),
+    A(5, "00_INDEX", "닛케이225", "일본", "^N225", "시장지수", "일본대표지수", "일본 대표 대형주 지수", "벤치마크"),
+    A(6, "00_INDEX", "대만 가권지수", "대만", "^TWII", "시장지수", "대만지수", "대만 반도체/전자 밸류체인 심리", "벤치마크"),
+    A(7, "00_INDEX", "S&P500", "미국", "^GSPC", "시장지수", "미국대형주", "미국 대형주 지수", "벤치마크"),
+    A(8, "00_INDEX", "나스닥100", "미국", "^NDX", "시장지수", "기술주지수", "미국 대형 기술주 지수", "벤치마크"),
+    A(9, "00_INDEX", "PHLX 반도체", "미국", "^SOX", "반도체지수", "반도체지수", "글로벌 반도체 심리 핵심 지수", "벤치마크"),
 
-    # ===================== 02_MEMORY_STORAGE : 메모리·스토리지 =====================
-    {"name": "SK하이닉스", "code": "000660", "market": "KR", "country": "KR", "sector": "메모리", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "000660.KS", "sort_order": 200, "ai_group": "02_MEMORY_STORAGE", "ai_subgroup": "HBM/DRAM", "product_group": "HBM·DRAM·낸드", "exposure_type": "CORE", "enabled": True},
-    {"name": "삼성전자", "code": "005930", "market": "KR", "country": "KR", "sector": "메모리/종합반도체", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "005930.KS", "sort_order": 201, "ai_group": "02_MEMORY_STORAGE", "ai_subgroup": "HBM/DRAM/NAND", "product_group": "DRAM·HBM·낸드(+파운드리)", "exposure_type": "CORE", "note": "03 파운드리 축에도 해당", "enabled": True},
-    {"name": "마이크론", "code": "MU", "market": "US", "country": "US", "sector": "메모리", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "MU", "sort_order": 202, "ai_group": "02_MEMORY_STORAGE", "ai_subgroup": "HBM/DRAM/NAND", "product_group": "DRAM·HBM·낸드", "exposure_type": "CORE", "enabled": True},
-    {"name": "키옥시아", "code": "285A.T", "market": "JP", "country": "JP", "sector": "메모리", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "285A.T", "sort_order": 203, "ai_group": "02_MEMORY_STORAGE", "ai_subgroup": "NAND", "product_group": "낸드플래시", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "파두", "code": "440110", "market": "KR", "country": "KR", "sector": "스토리지 컨트롤러", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "440110.KQ", "sort_order": 204, "ai_group": "02_MEMORY_STORAGE", "ai_subgroup": "SSD 컨트롤러", "product_group": "SSD 컨트롤러·SmartNIC", "exposure_type": "HIGH_RISK", "enabled": True},
+    # ===== 01 AI 연산·ASIC =====
+    A(100, "01_COMPUTE_ASIC", "엔비디아", "미국", "NVDA", "AI 가속기", "GPU", "데이터센터 GPU/AI 가속기 절대 핵심", "핵심"),
+    A(101, "01_COMPUTE_ASIC", "AMD", "미국", "AMD", "AI 가속기", "GPU/CPU", "GPU·CPU·AI 가속기", "핵심"),
+    A(102, "01_COMPUTE_ASIC", "브로드컴", "미국", "AVGO", "ASIC/네트워크", "ASIC/네트워크", "커스텀 AI ASIC·스위치 ASIC·네트워킹", "핵심"),
+    A(103, "01_COMPUTE_ASIC", "마벨", "미국", "MRVL", "ASIC/네트워크", "ASIC/광DSP", "커스텀 ASIC·광 DSP·데이터센터 연결", "핵심"),
+    A(104, "01_COMPUTE_ASIC", "퀄컴", "미국", "QCOM", "AI 추론/SoC", "엣지AI/추론", "엣지 AI·저전력 추론·모바일 SoC", "2차"),
+    A(105, "01_COMPUTE_ASIC", "미디어텍", "대만", "2454.TW", "SoC", "SoC", "엣지 AI·모바일·ASIC 가능성", "2차"),
+    A(106, "01_COMPUTE_ASIC", "알칩 테크놀로지", "대만", "3661.TW", "ASIC 디자인", "ASIC 디자인하우스", "AI ASIC 설계 서비스·고변동성", "고위험"),
+    A(107, "01_COMPUTE_ASIC", "Astera Labs", "미국", "ALAB", "AI 연결", "PCIe/CXL", "AI 서버 PCIe·CXL 연결 칩", "핵심"),
+    A(108, "01_COMPUTE_ASIC", "Credo Technology", "미국", "CRDO", "AI 연결", "SerDes/DSP", "AI 클러스터 고속 연결·액티브 전기케이블", "고위험"),
 
-    # ===================== 03_FOUNDRY_MANUFACTURING : 파운드리·제조 =====================
-    {"name": "TSMC", "code": "TSM", "market": "US", "country": "TW", "sector": "파운드리", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "TSM", "sort_order": 300, "ai_group": "03_FOUNDRY_MANUFACTURING", "ai_subgroup": "선단 파운드리", "product_group": "선단공정 파운드리 1위", "exposure_type": "CORE", "note": "TSMC ADR", "enabled": True},
-    {"name": "인텔", "code": "INTC", "market": "US", "country": "US", "sector": "IDM/파운드리", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "INTC", "sort_order": 301, "ai_group": "03_FOUNDRY_MANUFACTURING", "ai_subgroup": "IDM/파운드리", "product_group": "CPU·IDM·파운드리", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "UMC", "code": "2303.TW", "market": "TW", "country": "TW", "sector": "파운드리", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2303.TW", "sort_order": 302, "ai_group": "03_FOUNDRY_MANUFACTURING", "ai_subgroup": "성숙 파운드리", "product_group": "성숙공정 파운드리", "exposure_type": "SECONDARY", "enabled": True},
+    # ===== 02 EDA·IP =====
+    A(150, "02_EDA_IP", "Synopsys", "미국", "SNPS", "EDA/IP", "EDA/IP", "반도체 설계 자동화·IP·검증", "핵심"),
+    A(151, "02_EDA_IP", "Cadence Design Systems", "미국", "CDNS", "EDA/IP", "EDA", "반도체 설계 자동화·시뮬레이션", "핵심"),
+    A(152, "02_EDA_IP", "Arm Holdings", "미국", "ARM", "CPU IP", "CPU IP", "AI 서버 CPU·반도체 IP·라이선스", "핵심"),
+    A(153, "02_EDA_IP", "Siemens", "독일", "SIE.DE", "EDA/산업소프트웨어", "EDA/산업SW", "Siemens EDA 포함·순수 EDA주는 아님", "2차"),
 
-    # ===================== 04_EQUIPMENT_TEST : 장비·테스트 =====================
-    {"name": "한미반도체", "code": "042700", "market": "KR", "country": "KR", "sector": "반도체 장비", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "042700.KS", "sort_order": 400, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "후공정 장비", "product_group": "HBM TC 본더", "exposure_type": "CORE", "enabled": True},
-    {"name": "어플라이드 머티어리얼즈", "code": "AMAT", "market": "US", "country": "US", "sector": "반도체 장비", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "AMAT", "sort_order": 401, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "전공정 장비", "product_group": "증착·식각 등 종합장비", "exposure_type": "CORE", "enabled": True},
-    {"name": "램리서치", "code": "LRCX", "market": "US", "country": "US", "sector": "반도체 장비", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "LRCX", "sort_order": 402, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "식각/증착", "product_group": "식각·증착 장비", "exposure_type": "CORE", "enabled": True},
-    {"name": "KLA", "code": "KLAC", "market": "US", "country": "US", "sector": "반도체 장비", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "KLAC", "sort_order": 403, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "검사/계측", "product_group": "공정 검사·계측", "exposure_type": "CORE", "enabled": True},
-    {"name": "ASML", "code": "ASML", "market": "US", "country": "EU", "sector": "노광 장비", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "ASML", "sort_order": 404, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "노광(EUV)", "product_group": "EUV/DUV 노광장비 독점", "exposure_type": "CORE", "note": "네덜란드, 미국 ADR 수집", "enabled": True},
-    {"name": "도쿄일렉트론", "code": "8035.T", "market": "JP", "country": "JP", "sector": "반도체 장비", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "8035.T", "sort_order": 405, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "전공정 장비", "product_group": "코터·증착·식각 장비", "exposure_type": "CORE", "enabled": True},
-    {"name": "어드반테스트", "code": "6857.T", "market": "JP", "country": "JP", "sector": "테스트 장비", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "6857.T", "sort_order": 406, "ai_group": "04_EQUIPMENT_TEST", "ai_subgroup": "테스터", "product_group": "HBM·SoC 테스터", "exposure_type": "CORE", "enabled": True},
+    # ===== 03 메모리·스토리지 =====
+    A(200, "03_MEMORY_STORAGE", "SK하이닉스", "한국", "000660.KS", "메모리", "HBM/DRAM/NAND", "HBM·DRAM·낸드 핵심 공급자", "핵심"),
+    A(201, "03_MEMORY_STORAGE", "삼성전자", "한국", "005930.KS", "메모리/종합반도체", "HBM/DRAM/NAND/파운드리", "메모리·HBM·낸드·파운드리", "핵심"),
+    A(202, "03_MEMORY_STORAGE", "마이크론", "미국", "MU", "메모리", "HBM/DRAM/NAND", "미국 메모리 핵심 기업", "핵심"),
+    A(203, "03_MEMORY_STORAGE", "키옥시아", "일본", "285A.T", "메모리", "NAND", "낸드플래시·AI 스토리지 수혜", "핵심"),
+    A(204, "03_MEMORY_STORAGE", "Sandisk", "미국", "SNDK", "메모리", "NAND/SSD", "낸드·SSD·AI 데이터센터 스토리지", "핵심"),
+    A(205, "03_MEMORY_STORAGE", "Western Digital", "미국", "WDC", "스토리지", "HDD/스토리지", "대용량 데이터 저장·HDD 중심", "2차"),
+    A(206, "03_MEMORY_STORAGE", "Seagate", "미국", "STX", "스토리지", "HDD/스토리지", "니어라인 HDD·AI 데이터 저장", "2차"),
+    A(207, "03_MEMORY_STORAGE", "파두", "한국", "440110.KQ", "스토리지 컨트롤러", "SSD 컨트롤러", "SSD 컨트롤러·실적 변동성 큼", "고위험"),
 
-    # ===================== 05_PACKAGING_SUBSTRATE_PCB : 패키징·기판·PCB =====================
-    {"name": "대덕전자", "code": "353200", "market": "KR", "country": "KR", "sector": "기판", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "353200.KS", "sort_order": 500, "ai_group": "05_PACKAGING_SUBSTRATE_PCB", "ai_subgroup": "FC-BGA 기판", "product_group": "패키지 기판(FC-BGA)", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "이수페타시스", "code": "007660", "market": "KR", "country": "KR", "sector": "PCB", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "007660.KS", "sort_order": 501, "ai_group": "05_PACKAGING_SUBSTRATE_PCB", "ai_subgroup": "고다층 PCB", "product_group": "AI 가속기용 고다층 PCB", "exposure_type": "HIGH_RISK", "enabled": True},
-    {"name": "ASE 테크놀로지", "code": "3711.TW", "market": "TW", "country": "TW", "sector": "OSAT", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "3711.TW", "sort_order": 502, "ai_group": "05_PACKAGING_SUBSTRATE_PCB", "ai_subgroup": "OSAT 패키징", "product_group": "후공정 패키징·테스트", "exposure_type": "CORE", "enabled": True},
-    {"name": "유니마이크론", "code": "3037.TW", "market": "TW", "country": "TW", "sector": "기판", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "3037.TW", "sort_order": 503, "ai_group": "05_PACKAGING_SUBSTRATE_PCB", "ai_subgroup": "ABF 기판", "product_group": "ABF 패키지 기판", "exposure_type": "CORE", "enabled": True},
-    {"name": "이비덴", "code": "4062.T", "market": "JP", "country": "JP", "sector": "기판", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "4062.T", "sort_order": 504, "ai_group": "05_PACKAGING_SUBSTRATE_PCB", "ai_subgroup": "ABF 기판", "product_group": "ABF 패키지 기판 선두", "exposure_type": "CORE", "enabled": True},
+    # ===== 04 파운드리·제조 =====
+    A(300, "04_FOUNDRY_MANUFACTURING", "TSMC", "대만", "TSM", "파운드리", "선단 파운드리", "선단공정 파운드리 절대 핵심", "핵심", adr=True, local="2330.TW"),
+    A(301, "04_FOUNDRY_MANUFACTURING", "인텔", "미국", "INTC", "IDM/파운드리", "CPU/IDM/파운드리", "CPU·IDM·파운드리 턴어라운드 관찰", "2차"),
+    A(302, "04_FOUNDRY_MANUFACTURING", "GlobalFoundries", "미국", "GFS", "파운드리", "성숙 파운드리", "성숙공정·특수공정 파운드리", "2차"),
+    A(303, "04_FOUNDRY_MANUFACTURING", "UMC", "대만", "2303.TW", "파운드리", "성숙 파운드리", "AI 핵심보다는 성숙공정 사이클 체크용", "보조"),
 
-    # ===================== 06_MLCC_PASSIVE_COMPONENT : MLCC·수동부품 =====================
-    {"name": "삼성전기", "code": "009150", "market": "KR", "country": "KR", "sector": "MLCC/기판", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "009150.KS", "sort_order": 600, "ai_group": "06_MLCC_PASSIVE_COMPONENT", "ai_subgroup": "MLCC", "product_group": "MLCC 세계 2위·FC-BGA 기판", "exposure_type": "CORE", "note": "05 기판 축에도 해당", "enabled": True},
-    {"name": "무라타제작소", "code": "6981.T", "market": "JP", "country": "JP", "sector": "MLCC", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "6981.T", "sort_order": 601, "ai_group": "06_MLCC_PASSIVE_COMPONENT", "ai_subgroup": "MLCC", "product_group": "MLCC 세계 1위", "exposure_type": "CORE", "enabled": True},
-    {"name": "타이요유덴", "code": "6976.T", "market": "JP", "country": "JP", "sector": "MLCC", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "6976.T", "sort_order": 602, "ai_group": "06_MLCC_PASSIVE_COMPONENT", "ai_subgroup": "MLCC", "product_group": "MLCC·인덕터", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "TDK", "code": "6762.T", "market": "JP", "country": "JP", "sector": "수동부품", "asset_type": "jp_stock", "source": "yfinance", "yf_ticker": "6762.T", "sort_order": 603, "ai_group": "06_MLCC_PASSIVE_COMPONENT", "ai_subgroup": "수동부품", "product_group": "MLCC·소형 배터리", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "야게오", "code": "2327.TW", "market": "TW", "country": "TW", "sector": "수동부품", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2327.TW", "sort_order": 604, "ai_group": "06_MLCC_PASSIVE_COMPONENT", "ai_subgroup": "수동부품", "product_group": "칩저항·MLCC", "exposure_type": "SECONDARY", "enabled": True},
+    # ===== 05 장비·테스트 =====
+    A(400, "05_EQUIPMENT_TEST", "ASML", "유럽", "ASML", "노광 장비", "노광(EUV/DUV)", "EUV 노광장비 독점적 지위", "핵심", adr=True, local="ASML.AS"),
+    A(401, "05_EQUIPMENT_TEST", "Applied Materials", "미국", "AMAT", "반도체 장비", "전공정 장비", "증착·식각·공정장비 종합", "핵심"),
+    A(402, "05_EQUIPMENT_TEST", "Lam Research", "미국", "LRCX", "반도체 장비", "식각/증착", "식각·증착·메모리 장비", "핵심"),
+    A(403, "05_EQUIPMENT_TEST", "KLA", "미국", "KLAC", "반도체 장비", "검사/계측", "공정 검사·계측 병목", "핵심"),
+    A(404, "05_EQUIPMENT_TEST", "도쿄일렉트론", "일본", "8035.T", "반도체 장비", "전공정 장비", "코터·증착·식각 장비", "핵심"),
+    A(405, "05_EQUIPMENT_TEST", "어드반테스트", "일본", "6857.T", "테스트 장비", "테스터", "HBM·SoC·AI 칩 테스트", "핵심"),
+    A(406, "05_EQUIPMENT_TEST", "Teradyne", "미국", "TER", "테스트 장비", "테스터", "반도체 자동 테스트 장비", "2차"),
+    A(407, "05_EQUIPMENT_TEST", "DISCO", "일본", "6146.T", "후공정 장비", "다이싱/그라인딩", "웨이퍼 절단·연마·후공정 핵심", "핵심"),
+    A(408, "05_EQUIPMENT_TEST", "Lasertec", "일본", "6920.T", "검사 장비", "EUV 마스크 검사", "EUV 마스크 검사 장비", "2차"),
+    A(409, "05_EQUIPMENT_TEST", "ASM International", "네덜란드", "ASM.AS", "반도체 장비", "ALD/증착", "원자층증착 ALD 장비", "2차"),
+    A(410, "05_EQUIPMENT_TEST", "BE Semiconductor", "네덜란드", "BESI.AS", "후공정 장비", "패키징 장비", "하이브리드 본딩·패키징 장비", "2차"),
+    A(411, "05_EQUIPMENT_TEST", "한미반도체", "한국", "042700.KS", "후공정 장비", "HBM TC 본더", "HBM 후공정 장비 핵심", "핵심"),
 
-    # ===================== 07_NETWORK_OPTICAL : 네트워크·광 =====================
-    {"name": "아리스타 네트웍스", "code": "ANET", "market": "US", "country": "US", "sector": "네트워크", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "ANET", "sort_order": 700, "ai_group": "07_NETWORK_OPTICAL", "ai_subgroup": "스위치", "product_group": "AI 데이터센터 스위치", "exposure_type": "CORE", "enabled": True},
-    {"name": "코히어런트", "code": "COHR", "market": "US", "country": "US", "sector": "광부품", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "COHR", "sort_order": 701, "ai_group": "07_NETWORK_OPTICAL", "ai_subgroup": "광트랜시버", "product_group": "광트랜시버·광부품", "exposure_type": "CORE", "enabled": True},
-    {"name": "액톤 테크놀로지", "code": "2345.TW", "market": "TW", "country": "TW", "sector": "네트워크", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2345.TW", "sort_order": 702, "ai_group": "07_NETWORK_OPTICAL", "ai_subgroup": "스위치 ODM", "product_group": "화이트박스 스위치 ODM", "exposure_type": "SECONDARY", "enabled": True},
+    # ===== 06 소재·웨이퍼 =====
+    A(450, "06_MATERIALS_WAFER", "Shin-Etsu Chemical", "일본", "4063.T", "소재/웨이퍼", "실리콘웨이퍼/소재", "반도체 웨이퍼·화학소재", "핵심"),
+    A(451, "06_MATERIALS_WAFER", "SUMCO", "일본", "3436.T", "웨이퍼", "실리콘웨이퍼", "반도체 실리콘 웨이퍼", "핵심"),
+    A(452, "06_MATERIALS_WAFER", "Tokyo Ohka Kogyo", "일본", "4186.T", "포토레지스트", "포토레지스트", "반도체 감광재·EUV 소재", "2차"),
+    A(453, "06_MATERIALS_WAFER", "Hoya", "일본", "7741.T", "포토마스크", "포토마스크 블랭크", "EUV/반도체 포토마스크 소재", "2차"),
+    A(454, "06_MATERIALS_WAFER", "Entegris", "미국", "ENTG", "소재/부품", "필터/소재/케미컬", "첨단공정 소재·오염 제어", "핵심"),
+    A(455, "06_MATERIALS_WAFER", "Resonac", "일본", "4004.T", "소재", "패키징/반도체소재", "후공정·패키징 소재", "2차"),
+    A(456, "06_MATERIALS_WAFER", "Air Liquide", "프랑스", "AI.PA", "산업가스", "반도체 가스", "반도체용 특수가스·산업가스", "2차"),
 
-    # ===================== 08_POWER_COOLING_GRID : 전력·냉각·그리드 =====================
-    {"name": "HD현대일렉트릭", "code": "267260", "market": "KR", "country": "KR", "sector": "전력기기", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "267260.KS", "sort_order": 800, "ai_group": "08_POWER_COOLING_GRID", "ai_subgroup": "전력기기", "product_group": "변압기·전력기기", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "LS ELECTRIC", "code": "010120", "market": "KR", "country": "KR", "sector": "전력기기", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "010120.KS", "sort_order": 801, "ai_group": "08_POWER_COOLING_GRID", "ai_subgroup": "전력/배전", "product_group": "배전·전력 인프라", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "버티브", "code": "VRT", "market": "US", "country": "US", "sector": "전력/냉각", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "VRT", "sort_order": 802, "ai_group": "08_POWER_COOLING_GRID", "ai_subgroup": "전력/냉각", "product_group": "데이터센터 전력·냉각", "exposure_type": "CORE", "enabled": True},
-    {"name": "이튼", "code": "ETN", "market": "US", "country": "US", "sector": "전력관리", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "ETN", "sort_order": 803, "ai_group": "08_POWER_COOLING_GRID", "ai_subgroup": "전력관리", "product_group": "전력관리·배전", "exposure_type": "CORE", "enabled": True},
-    {"name": "델타 일렉트로닉스", "code": "2308.TW", "market": "TW", "country": "TW", "sector": "전원/냉각", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2308.TW", "sort_order": 804, "ai_group": "08_POWER_COOLING_GRID", "ai_subgroup": "전원/냉각", "product_group": "전원공급·열관리 솔루션", "exposure_type": "CORE", "enabled": True},
+    # ===== 07 패키징·기판·PCB =====
+    A(500, "07_PACKAGING_SUBSTRATE_PCB", "ASE Technology", "대만", "3711.TW", "OSAT", "OSAT", "후공정 패키징·테스트", "핵심"),
+    A(501, "07_PACKAGING_SUBSTRATE_PCB", "Amkor Technology", "미국", "AMKR", "OSAT", "OSAT", "후공정 패키징·테스트", "핵심"),
+    A(502, "07_PACKAGING_SUBSTRATE_PCB", "Unimicron", "대만", "3037.TW", "기판", "ABF 기판", "ABF 패키지 기판", "핵심"),
+    A(503, "07_PACKAGING_SUBSTRATE_PCB", "Ibiden", "일본", "4062.T", "기판", "ABF 기판", "ABF 패키지 기판 선두권", "핵심"),
+    A(504, "07_PACKAGING_SUBSTRATE_PCB", "Nan Ya PCB", "대만", "8046.TW", "기판", "ABF/PCB", "패키지 기판·PCB", "2차"),
+    A(505, "07_PACKAGING_SUBSTRATE_PCB", "Kingboard Laminates", "홍콩", "1888.HK", "PCB 소재", "동박적층판/CCL", "PCB 핵심 소재·AI 서버 PCB 수혜", "2차"),
+    A(506, "07_PACKAGING_SUBSTRATE_PCB", "AT&S", "오스트리아", "ATS.VI", "기판", "ABF/IC 기판", "고성능 IC 기판·패키징 기판", "2차"),
+    A(507, "07_PACKAGING_SUBSTRATE_PCB", "대덕전자", "한국", "353200.KS", "기판", "FC-BGA 기판", "패키지 기판·FC-BGA", "2차"),
+    A(508, "07_PACKAGING_SUBSTRATE_PCB", "이수페타시스", "한국", "007660.KS", "PCB", "고다층 PCB", "AI 가속기용 고다층 PCB·고변동성", "고위험"),
 
-    # ===================== 09_AI_SERVER_ODM : AI 서버·ODM =====================
-    {"name": "슈퍼마이크로", "code": "SMCI", "market": "US", "country": "US", "sector": "AI 서버", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "SMCI", "sort_order": 900, "ai_group": "09_AI_SERVER_ODM", "ai_subgroup": "AI 서버", "product_group": "AI 서버·랙 시스템", "exposure_type": "CORE", "enabled": True},
-    {"name": "델 테크놀로지스", "code": "DELL", "market": "US", "country": "US", "sector": "AI 서버", "asset_type": "us_stock", "source": "yfinance", "yf_ticker": "DELL", "sort_order": 901, "ai_group": "09_AI_SERVER_ODM", "ai_subgroup": "AI 서버", "product_group": "AI 서버·엔터프라이즈", "exposure_type": "SECONDARY", "enabled": True},
-    {"name": "폭스콘(홍하이)", "code": "2317.TW", "market": "TW", "country": "TW", "sector": "EMS/ODM", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2317.TW", "sort_order": 902, "ai_group": "09_AI_SERVER_ODM", "ai_subgroup": "AI 서버 ODM", "product_group": "AI 서버 위탁생산 1위", "exposure_type": "CORE", "enabled": True},
-    {"name": "콴타 컴퓨터", "code": "2382.TW", "market": "TW", "country": "TW", "sector": "ODM", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "2382.TW", "sort_order": 903, "ai_group": "09_AI_SERVER_ODM", "ai_subgroup": "AI 서버 ODM", "product_group": "AI 서버 ODM", "exposure_type": "CORE", "enabled": True},
-    {"name": "위윈 (Wiwynn)", "code": "6669.TW", "market": "TW", "country": "TW", "sector": "ODM", "asset_type": "tw_stock", "source": "yfinance", "yf_ticker": "6669.TW", "sort_order": 904, "ai_group": "09_AI_SERVER_ODM", "ai_subgroup": "하이퍼스케일 ODM", "product_group": "하이퍼스케일 서버 ODM", "exposure_type": "HIGH_RISK", "enabled": True},
+    # ===== 08 MLCC·수동부품 =====
+    A(600, "08_MLCC_PASSIVE_COMPONENT", "무라타제작소", "일본", "6981.T", "MLCC", "MLCC", "MLCC 세계 최상위권", "핵심"),
+    A(601, "08_MLCC_PASSIVE_COMPONENT", "삼성전기", "한국", "009150.KS", "MLCC/기판", "MLCC/FC-BGA", "MLCC 세계 상위권·FC-BGA 기판", "핵심"),
+    A(602, "08_MLCC_PASSIVE_COMPONENT", "타이요유덴", "일본", "6976.T", "MLCC", "MLCC/인덕터", "MLCC·인덕터·수동부품", "2차"),
+    A(603, "08_MLCC_PASSIVE_COMPONENT", "TDK", "일본", "6762.T", "수동부품", "수동부품/배터리", "MLCC·인덕터·소형 배터리", "2차"),
+    A(604, "08_MLCC_PASSIVE_COMPONENT", "Yageo", "대만", "2327.TW", "수동부품", "MLCC/칩저항", "칩저항·MLCC·수동부품", "2차"),
+    A(605, "08_MLCC_PASSIVE_COMPONENT", "Kyocera", "일본", "6971.T", "세라믹/부품", "세라믹패키지/부품", "세라믹 부품·전자부품", "2차"),
 
-    # ===================== 10_INDIRECT_HOLDING : 간접·지주 =====================
-    {"name": "SK스퀘어", "code": "402340", "market": "KR", "country": "KR", "sector": "지주", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "402340.KS", "sort_order": 1000, "ai_group": "10_INDIRECT_HOLDING", "ai_subgroup": "반도체 지주", "product_group": "SK하이닉스 지배 지주사", "exposure_type": "INDIRECT", "enabled": True},
-    {"name": "삼성물산", "code": "028260", "market": "KR", "country": "KR", "sector": "지주", "asset_type": "kr_stock", "source": "krx_stock", "yf_ticker": "028260.KS", "sort_order": 1001, "ai_group": "10_INDIRECT_HOLDING", "ai_subgroup": "그룹 지주", "product_group": "삼성그룹 지배구조 핵심", "exposure_type": "INDIRECT", "enabled": True},
+    # ===== 09 네트워크·광 =====
+    A(700, "09_NETWORK_OPTICAL", "Arista Networks", "미국", "ANET", "네트워크", "스위치", "AI 데이터센터 이더넷 스위치", "핵심"),
+    A(701, "09_NETWORK_OPTICAL", "Coherent", "미국", "COHR", "광부품", "광트랜시버/레이저", "광트랜시버·광부품", "핵심"),
+    A(702, "09_NETWORK_OPTICAL", "Lumentum", "미국", "LITE", "광부품", "광부품/레이저", "광통신 부품·레이저", "핵심"),
+    A(703, "09_NETWORK_OPTICAL", "Fabrinet", "미국", "FN", "광부품 제조", "광부품 제조", "광통신 부품 위탁제조", "2차"),
+    A(704, "09_NETWORK_OPTICAL", "Applied Optoelectronics", "미국", "AAOI", "광트랜시버", "광트랜시버", "데이터센터 광모듈·고변동성", "고위험"),
+    A(705, "09_NETWORK_OPTICAL", "Accton Technology", "대만", "2345.TW", "네트워크", "스위치 ODM", "화이트박스 스위치 ODM", "2차"),
+    A(706, "09_NETWORK_OPTICAL", "Ciena", "미국", "CIEN", "광네트워크", "광네트워크", "데이터센터 인터커넥트·광전송", "2차"),
+
+    # ===== 10 전력·냉각·그리드 =====
+    A(800, "10_POWER_COOLING_GRID", "Vertiv", "미국", "VRT", "전력/냉각", "전력/냉각", "데이터센터 전력·냉각 인프라", "핵심"),
+    A(801, "10_POWER_COOLING_GRID", "Eaton", "미국", "ETN", "전력관리", "전력관리/배전", "전력관리·배전·스위치기어", "핵심"),
+    A(802, "10_POWER_COOLING_GRID", "Schneider Electric", "프랑스", "SU.PA", "전력관리", "전력관리/배전", "데이터센터 전력·자동화", "핵심"),
+    A(803, "10_POWER_COOLING_GRID", "ABB", "스위스", "ABBN.SW", "전력/자동화", "전력기기/자동화", "전력기기·배전·자동화", "2차"),
+    A(804, "10_POWER_COOLING_GRID", "GE Vernova", "미국", "GEV", "전력인프라", "전력망/발전", "전력망·발전 인프라", "2차"),
+    A(805, "10_POWER_COOLING_GRID", "Siemens Energy", "독일", "ENR.DE", "전력인프라", "전력망/발전", "전력망·변전·발전 인프라", "2차"),
+    A(806, "10_POWER_COOLING_GRID", "Delta Electronics", "대만", "2308.TW", "전원/냉각", "전원/냉각", "전원공급·열관리 솔루션", "핵심"),
+    A(807, "10_POWER_COOLING_GRID", "Lite-On Technology", "대만", "2301.TW", "전원공급", "서버 PSU", "데이터센터 전원공급장치·파워모듈", "2차"),
+    A(808, "10_POWER_COOLING_GRID", "Monolithic Power Systems", "미국", "MPWR", "전력반도체", "PMIC/전원칩", "AI 서버 전력관리 반도체", "핵심"),
+    A(809, "10_POWER_COOLING_GRID", "HD현대일렉트릭", "한국", "267260.KS", "전력기기", "변압기/전력기기", "변압기·전력기기", "2차"),
+    A(810, "10_POWER_COOLING_GRID", "LS ELECTRIC", "한국", "010120.KS", "전력기기", "배전/전력인프라", "배전·전력 인프라", "2차"),
+    A(811, "10_POWER_COOLING_GRID", "Auras Technology", "대만", "3324.TWO", "냉각", "액체냉각/콜드플레이트", "AI 서버 액체냉각 부품", "고위험"),
+    A(812, "10_POWER_COOLING_GRID", "Asia Vital Components", "대만", "3017.TW", "냉각", "팬/열관리", "AI 서버 열관리·냉각 솔루션", "고위험"),
+    A(813, "10_POWER_COOLING_GRID", "Bloom Energy", "미국", "BE", "전력공급", "연료전지/분산전원", "AI 데이터센터 전력 공급 테마", "고위험"),
+
+    # ===== 11 AI 서버·ODM =====
+    A(900, "11_AI_SERVER_ODM", "Super Micro Computer", "미국", "SMCI", "AI 서버", "AI 서버/랙", "AI 서버·랙 시스템·고변동성", "고위험"),
+    A(901, "11_AI_SERVER_ODM", "Dell Technologies", "미국", "DELL", "AI 서버", "AI 서버/엔터프라이즈", "AI 서버·엔터프라이즈 인프라", "핵심"),
+    A(902, "11_AI_SERVER_ODM", "HPE", "미국", "HPE", "AI 서버", "AI 서버/HPC", "서버·HPC·엔터프라이즈 인프라", "2차"),
+    A(903, "11_AI_SERVER_ODM", "Foxconn Hon Hai", "대만", "2317.TW", "EMS/ODM", "AI 서버 ODM", "AI 서버 위탁생산 핵심", "핵심"),
+    A(904, "11_AI_SERVER_ODM", "Quanta Computer", "대만", "2382.TW", "ODM", "AI 서버 ODM", "AI 서버 ODM", "핵심"),
+    A(905, "11_AI_SERVER_ODM", "Wiwynn", "대만", "6669.TW", "ODM", "하이퍼스케일 서버", "하이퍼스케일 AI 서버 ODM", "고위험"),
+    A(906, "11_AI_SERVER_ODM", "Wistron", "대만", "3231.TW", "ODM", "AI 서버 ODM", "AI 서버·서버 ODM", "2차"),
+    A(907, "11_AI_SERVER_ODM", "Inventec", "대만", "2356.TW", "ODM", "서버 ODM", "서버·노트북·AI 서버 ODM", "2차"),
+    A(908, "11_AI_SERVER_ODM", "Gigabyte", "대만", "2376.TW", "서버/메인보드", "GPU 서버/메인보드", "AI 서버·메인보드·부품", "2차"),
+
+    # ===== 12 클라우드·CAPEX(수요) =====
+    A(950, "12_CLOUD_CAPEX", "Microsoft", "미국", "MSFT", "클라우드/CAPEX", "Azure/AI 인프라", "AI 데이터센터 CAPEX 방향성 핵심", "수요"),
+    A(951, "12_CLOUD_CAPEX", "Amazon", "미국", "AMZN", "클라우드/CAPEX", "AWS/AI 인프라", "AI 데이터센터 수요·자체칩", "수요"),
+    A(952, "12_CLOUD_CAPEX", "Alphabet", "미국", "GOOGL", "클라우드/CAPEX", "Google Cloud/TPU", "AI 인프라 수요·TPU", "수요"),
+    A(953, "12_CLOUD_CAPEX", "Meta Platforms", "미국", "META", "클라우드/CAPEX", "AI 인프라/MTIA", "AI 데이터센터 투자 수요 핵심", "수요"),
+    A(954, "12_CLOUD_CAPEX", "Oracle", "미국", "ORCL", "클라우드/CAPEX", "OCI/AI 인프라", "AI 클라우드 인프라 수요", "수요"),
+    A(955, "12_CLOUD_CAPEX", "CoreWeave", "미국", "CRWV", "AI 클라우드", "GPU 클라우드", "AI GPU 클라우드·고변동성", "고위험"),
+    A(956, "12_CLOUD_CAPEX", "Nebius", "미국", "NBIS", "AI 클라우드", "AI 클라우드", "AI 인프라 클라우드·고변동성", "고위험"),
 ]
 
 

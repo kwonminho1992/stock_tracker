@@ -191,6 +191,7 @@ h2 { font-size: 1.1rem; margin: 0; }
 .c-JP { color: #ff7b8a; }
 .c-TW { color: #ffc15e; }
 .c-EU { color: #d6a3ff; }
+.c-HK { color: #e08fb0; }
 .exp-tag {
   display: inline-block;
   margin-top: 3px;
@@ -201,9 +202,26 @@ h2 { font-size: 1.1rem; margin: 0; }
 }
 .exp-CORE { color: var(--normal-fg); }
 .exp-SECONDARY { color: var(--caution-fg); }
-.exp-INDIRECT { color: var(--cooldown-fg); }
+.exp-SUPPORT { color: var(--cooldown-fg); }
+.exp-DEMAND { color: #d6a3ff; }
 .exp-BENCHMARK { color: var(--text-dim); }
 .exp-HIGH_RISK { color: var(--overheat-fg); }
+
+/* 티커 링크 · ADR 배지 · 통화 */
+.ticker-link { color: var(--accent); text-decoration: none; white-space: nowrap; }
+.ticker-link:hover code { text-decoration: underline; }
+.ticker-link code { color: var(--accent); }
+.ext-mark { font-size: 0.66rem; color: var(--text-dim); margin-left: 2px; }
+.adr-badge {
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  color: var(--caution-fg);
+  border: 1px solid currentColor;
+  vertical-align: middle;
+}
+.cur { font-size: 0.66rem; color: var(--text-dim); font-weight: 400; }
 
 .asset-sub { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
 #latest-table code { font-size: 0.78rem; color: var(--text-dim); }
