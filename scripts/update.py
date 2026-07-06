@@ -21,8 +21,11 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-from config import ASSETS, HISTORY_DAYS, MA_WINDOWS, enabled_assets
+from config import ASSETS, FRED_MACROS, HISTORY_DAYS, LINK_MACROS, MA_WINDOWS, enabled_assets
 from data_sources import fetch_asset
+from fred_source import available as fred_available
+from fred_source import fetch_latest as fetch_fred_latest
+from fred_source import load_dotenv
 from indicators import (
     add_disparities,
     add_moving_averages,
@@ -44,6 +47,15 @@ LATEST_PATH = DATA_DIR / "latest.json"
 HISTORY_PATH = DATA_DIR / "history.json"
 
 RUN_TYPE = "close"
+
+COUNTRY_CODES = {
+    "한국": "KR",
+    "미국": "US",
+    "일본": "JP",
+    "대만": "TW",
+    "유럽": "EU",
+    "홍콩": "HK",
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -104,6 +116,107 @@ def sanitize_for_json(obj):
     if isinstance(obj, (list, tuple)):
         return [sanitize_for_json(v) for v in obj]
     return obj
+
+
+def _country_code(label: Optional[str]) -> str:
+    return COUNTRY_CODES.get(str(label or ""), str(label or "-"))
+
+
+def _macro_link_record(item: Dict, source: str, reason: Optional[str] = None) -> Dict:
+    country_label = item.get("country_label")
+    country = _country_code(country_label)
+    note = item.get("note") or source
+    if reason:
+        note = f"{note}: {reason}"
+    return {
+        "name": item.get("name"),
+        "code": item.get("series_id") or item.get("code") or item.get("name"),
+        "ticker": item.get("series_id") or item.get("code") or item.get("name"),
+        "market": country,
+        "country": country,
+        "country_label": country_label,
+        "sector": item.get("group"),
+        "asset_type": "macro_link",
+        "source": source,
+        "note": note,
+        "sort_order": item.get("sort_order", 9999),
+        "ai_group": "00_INDEX",
+        "ai_subgroup": item.get("group"),
+        "product_group": item.get("desc"),
+        "exposure_type": "BENCHMARK",
+        "macro_group": item.get("group"),
+        "macro_target": item.get("target"),
+        "disparity_meaningful": False,
+        "listing_market": "-",
+        "currency": item.get("unit") or "-",
+        "price_source": source,
+        "is_adr": False,
+        "local_ticker": None,
+        "display_ticker": item.get("series_id") or item.get("code") or "",
+        "detail_url": item.get("url"),
+        "link_only": True,
+    }
+
+
+def _fred_macro_record(item: Dict) -> Dict:
+    obs = fetch_fred_latest(item["series_id"], yoy=item.get("mode") == "yoy")
+    if obs is None:
+        return _macro_link_record(item, "FRED", "API 키 없음/조회 실패")
+
+    mode = item.get("mode")
+    value = obs.get("yoy_pct") if mode == "yoy" else obs.get("value")
+    if value is None:
+        return _macro_link_record(item, "FRED", "전년동월대비 계산 불가")
+
+    country_label = item.get("country_label")
+    country = _country_code(country_label)
+    return {
+        "name": item["name"],
+        "code": item["series_id"],
+        "ticker": item["series_id"],
+        "market": country,
+        "country": country,
+        "country_label": country_label,
+        "sector": item.get("group"),
+        "asset_type": "macro_index",
+        "source": "fred",
+        "note": item.get("note"),
+        "sort_order": item.get("sort_order", 9999),
+        "ai_group": "00_INDEX",
+        "ai_subgroup": item.get("group"),
+        "product_group": item.get("desc"),
+        "exposure_type": "BENCHMARK",
+        "macro_group": item.get("group"),
+        "macro_mode": mode,
+        "macro_target": item.get("target"),
+        "disparity_meaningful": False,
+        "listing_market": "-",
+        "currency": item.get("unit"),
+        "price_source": "FRED",
+        "is_adr": False,
+        "local_ticker": None,
+        "display_ticker": item["series_id"],
+        "detail_url": item.get("url"),
+        "date": obs.get("asof"),
+        "close": value,
+        "change_pct": None,
+        "zone": None,
+        "zone_label": None,
+        "is_stale": False,
+        "is_suspicious": False,
+        "warning": None,
+    }
+
+
+def build_macro_records() -> List[Dict]:
+    """FRED/API 매크로와 링크 전용 매크로를 latest payload용 레코드로 변환."""
+    records: List[Dict] = []
+    if not fred_available():
+        records.extend(_macro_link_record(item, "FRED", "API 키 필요") for item in FRED_MACROS)
+    else:
+        records.extend(_fred_macro_record(item) for item in FRED_MACROS)
+    records.extend(_macro_link_record(item, item.get("note") or "Link") for item in LINK_MACROS)
+    return records
 
 
 def write_json(path: Path, payload) -> None:
@@ -330,6 +443,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
     run_type = args.run_type
+    load_dotenv()
 
     today = now_kst().date()
     start = time.time()
@@ -359,6 +473,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     log(f"대상 자산 {len(assets)}개 (비활성 제외)")
 
     latest_records, history_map = run(assets, today=today, run_type=run_type)
+    macro_records = build_macro_records()
+    latest_records.extend(macro_records)
+    log(f"매크로 참고 지표 {len(macro_records)}개 추가(FRED/API 또는 링크 전용)")
     ok = count_ok(latest_records)
     err = len(latest_records) - ok
     stale = sum(1 for r in latest_records if r.get("is_stale"))

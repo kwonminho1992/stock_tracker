@@ -56,6 +56,8 @@ jobs:
 
       - name: Update data
         # 스케줄 실행은 intraday(지연시세), 수동 실행은 선택한 모드 사용.
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/update.py --run-type "${{ github.event_name == 'schedule' && 'intraday' || github.event.inputs.run_type || 'close' }}" --force
 
       - name: Commit & push if changed

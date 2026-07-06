@@ -12,3 +12,7 @@ env/
 Thumbs.db
 .idea/
 .vscode/
+
+# 로컬 비밀키 (API 키 등) — 절대 커밋 금지. .env.example 만 커밋한다.
+.env
+.env.local

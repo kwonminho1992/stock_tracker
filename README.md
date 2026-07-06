@@ -160,6 +160,22 @@ pytest -q          # mock DataFrame 기반, 네트워크 불필요
 
 ---
 
+## 6-1. FRED API 키 설정
+
+FRED로 가져올 수 있는 매크로 지표(CPI, PPI, 기준금리, M2, 10년 금리 등)는 `FRED_API_KEY`가 있으면 FRED API에서 자동 수집합니다. 키가 비어 있으면 해당 카드는 값 없이 FRED 링크 카드로 표시됩니다.
+
+1. [FRED API Keys](https://fredaccount.stlouisfed.org/apikeys)에 접속합니다.
+2. FRED 계정으로 로그인한 뒤 **Request API Key**를 눌러 무료 키를 발급받습니다.
+3. 저장소 루트의 `.env` 파일을 열고 아래 줄의 `=` 뒤에 키를 그대로 붙여넣습니다.
+
+```dotenv
+FRED_API_KEY=발급받은_키
+```
+
+`.env`는 이미 `.gitignore`에 들어가 있어 커밋되지 않습니다. GitHub Actions 자동 갱신에서도 FRED 값을 채우려면 저장소 **Settings → Secrets and variables → Actions → New repository secret**에서 이름을 `FRED_API_KEY`로 만들고 같은 키를 넣어주세요.
+
+---
+
 ## 7. GitHub Pages 설정 방법
 
 1. 이 폴더(`market-disparity-tracker`)를 GitHub 저장소로 push 합니다.

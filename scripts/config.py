@@ -134,14 +134,21 @@ def A(so, grp, name, clabel, ticker, sector, sub, product, exp,
 # ---------------------------------------------------------------------------
 # 매크로 참고 지표(환율·금리·변동성) — 표가 아닌 상단 스트립 전용(disparity_meaningful=False).
 # ---------------------------------------------------------------------------
-def _macro(so, name, code, clabel, unit, sub, desc, url):
+# 매크로 표시 그룹(관련 지표끼리 묶는다). 화면 정렬 순서.
+MACRO_GROUP_ORDER: List[str] = [
+    "fx", "rates", "policy", "cpi", "ppi", "money", "commodity", "risk",
+]
+
+
+def _macro(so, name, code, clabel, unit, group, desc, url):
     cc = _CC[clabel]
     return {
         "name": name, "code": code, "yf_ticker": code, "market": cc,
-        "country": cc, "country_label": clabel, "sector": sub,
+        "country": cc, "country_label": clabel, "sector": group,
         "asset_type": "fx" if code.endswith("=X") else "macro_index",
         "source": "yfinance", "sort_order": so, "ai_group": "00_INDEX",
-        "ai_subgroup": sub, "product_group": desc, "exposure_type": "BENCHMARK",
+        "ai_subgroup": group, "product_group": desc, "exposure_type": "BENCHMARK",
+        "macro_group": group,
         "listing_market": "-", "currency": unit, "price_source": "Yahoo Finance",
         "is_adr": False, "local_ticker": None, "display_ticker": code,
         "detail_url": url, "disparity_meaningful": False, "note": None, "enabled": True,
@@ -150,34 +157,43 @@ def _macro(so, name, code, clabel, unit, sub, desc, url):
 
 ASSETS: List[Dict] = [
     # ===== 매크로 참고(상단 스트립) — 값·등락은 야후, 상세는 링크. 이격도 판정 안 함 =====
-    _macro(9001, "원/달러 환율", "KRW=X", "한국", "원", "환율",
+    _macro(9001, "원/달러 환율", "KRW=X", "한국", "원", "fx",
            "원화 가치. 상승=원화 약세(수출주 유리·외국인 매도 압력·수입물가↑)",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"),
-    _macro(9002, "엔/달러 환율", "JPY=X", "일본", "엔", "환율",
+    _macro(9002, "엔/달러 환율", "JPY=X", "일본", "엔", "fx",
            "엔화 가치. 엔 약세=일본 수출주 유리·엔캐리 트레이드 확대 신호",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY"),
-    _macro(9003, "달러인덱스 DXY", "DX-Y.NYB", "미국", "pt", "환율",
+    _macro(9003, "달러인덱스 DXY", "DX-Y.NYB", "미국", "pt", "fx",
            "주요 6개 통화 대비 달러 강세. 상승=신흥국·원자재·위험자산에 역풍",
            "https://www.investing.com/indices/usdollar"),
-    _macro(9004, "美 10년 국채금리", "^TNX", "미국", "%", "금리",
+    _macro(9004, "美 10년 국채금리", "^TNX", "미국", "%", "rates",
            "미국 10년물 금리. 상승=성장주·기술주 밸류에이션 부담·할인율↑",
            "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield"),
-    _macro(9005, "美 단기금리(13주)", "^IRX", "미국", "%", "금리",
+    _macro(9005, "美 단기금리(13주)", "^IRX", "미국", "%", "rates",
            "미국 13주 T-bill 금리. 연준 정책금리 방향 대용 지표",
            "https://www.investing.com/rates-bonds/u.s.-3-month-bond-yield"),
-    _macro(9006, "WTI 유가", "CL=F", "미국", "$", "원자재",
+    _macro(9006, "WTI 유가", "CL=F", "미국", "$", "commodity",
            "서부텍사스유 선물. 상승=인플레·에너지 비용↑, 경기·물가의 핵심 변수",
            "https://www.investing.com/commodities/crude-oil"),
-    _macro(9007, "금", "GC=F", "미국", "$", "원자재",
+    _macro(9007, "금", "GC=F", "미국", "$", "commodity",
            "금 선물. 안전자산·인플레 헤지, 실질금리·달러와 역상관 경향",
            "https://www.investing.com/commodities/gold"),
-    _macro(9008, "구리", "HG=F", "미국", "$", "원자재",
+    _macro(9008, "은", "SI=F", "미국", "$", "commodity",
+           "은 선물. 안전자산+산업금속(태양광·전자) 성격을 함께 가짐",
+           "https://www.investing.com/commodities/silver"),
+    _macro(9009, "구리", "HG=F", "미국", "$", "commodity",
            "구리 선물('닥터 코퍼'). 제조업·글로벌 경기의 선행 지표",
            "https://www.investing.com/commodities/copper"),
-    _macro(9009, "비트코인", "BTC-USD", "미국", "$", "위험자산",
+    _macro(9010, "천연가스", "NG=F", "미국", "$", "commodity",
+           "천연가스 선물. 난방·전력·데이터센터 전력비용의 변수",
+           "https://www.investing.com/commodities/natural-gas"),
+    _macro(9011, "비트코인", "BTC-USD", "미국", "$", "risk",
            "위험자산·유동성 심리 바로미터. 급등락=리스크온/오프 신호",
            "https://finance.yahoo.com/quote/BTC-USD"),
-    _macro(9010, "VIX 변동성", "^VIX", "미국", "pt", "변동성",
+    _macro(9012, "이더리움", "ETH-USD", "미국", "$", "risk",
+           "2위 암호자산. 알트코인·위험선호(리스크온) 심리에 민감",
+           "https://finance.yahoo.com/quote/ETH-USD"),
+    _macro(9013, "VIX 변동성", "^VIX", "미국", "pt", "risk",
            "S&P500 변동성('공포지수'). 급등=위험회피 심리 확대",
            "https://www.investing.com/indices/volatility-s-p-500"),
 
@@ -312,6 +328,110 @@ ASSETS: List[Dict] = [
     A(954, "12_CLOUD_CAPEX", "Oracle", "미국", "ORCL", "클라우드/CAPEX", "OCI/AI 인프라", "AI 클라우드 인프라 수요", "수요"),
     A(955, "12_CLOUD_CAPEX", "CoreWeave", "미국", "CRWV", "AI 클라우드", "GPU 클라우드", "AI GPU 클라우드·고변동성", "고위험"),
     A(956, "12_CLOUD_CAPEX", "Nebius", "미국", "NBIS", "AI 클라우드", "AI 클라우드", "AI 인프라 클라우드·고변동성", "고위험"),
+]
+
+
+# ---------------------------------------------------------------------------
+# FRED 매크로 지표 — API 키가 있으면 값(mode=yoy: 전년동월대비 %, level: 현재 수준)을
+# 채우고, 없거나 실패하면 링크 전용 카드로 대체된다.
+#   fields: name, series_id, group, unit, mode, desc, url, country_label, target(선택)
+# series_id 는 널리 쓰이는 값이나, 키 넣고 첫 실행 후 오차 있으면 조정.
+# ---------------------------------------------------------------------------
+FRED_MACROS: List[Dict] = [
+    # 장기금리(월간, OECD)
+    {"name": "한국 10년 금리", "series_id": "IRLTLT01KRM156N", "group": "rates", "unit": "%", "mode": "level",
+     "country_label": "한국", "sort_order": 9020,
+     "desc": "한국 10년물 국채금리(월간). 유동성·환율·부동산과 연동",
+     "url": "https://fred.stlouisfed.org/series/IRLTLT01KRM156N"},
+    {"name": "일본 10년 금리", "series_id": "IRLTLT01JPM156N", "group": "rates", "unit": "%", "mode": "level",
+     "country_label": "일본", "sort_order": 9021,
+     "desc": "일본 10년물 국채금리(월간). BOJ 정책·엔화와 직결",
+     "url": "https://fred.stlouisfed.org/series/IRLTLT01JPM156N"},
+
+    # 기준금리/정책금리
+    {"name": "美 기준금리", "series_id": "FEDFUNDS", "group": "policy", "unit": "%", "mode": "level",
+     "country_label": "미국", "target": "2.0%", "sort_order": 9040,
+     "desc": "연방기금금리(실효). 글로벌 유동성·달러·위험자산의 기준",
+     "url": "https://fred.stlouisfed.org/series/FEDFUNDS"},
+    {"name": "한국 기준금리", "series_id": "INTDSRKRM193N", "group": "policy", "unit": "%", "mode": "level",
+     "country_label": "한국", "target": "2.0%", "sort_order": 9041,
+     "desc": "FRED/IMF 할인율 계열. 한국은행 기준금리 대용으로 정책금리 방향 확인",
+     "url": "https://fred.stlouisfed.org/series/INTDSRKRM193N"},
+    {"name": "일본 정책금리", "series_id": "IRSTCB01JPM156N", "group": "policy", "unit": "%", "mode": "level",
+     "country_label": "일본", "target": "2.0%", "sort_order": 9042,
+     "desc": "일본 중앙은행 단기 정책금리 계열. 초완화 종료·엔캐리 향방",
+     "url": "https://fred.stlouisfed.org/series/IRSTCB01JPM156N"},
+
+    # 물가(CPI) — 전년동월대비 %
+    {"name": "美 CPI", "series_id": "CPIAUCSL", "group": "cpi", "unit": "%", "mode": "yoy",
+     "country_label": "미국", "target": "2.0%", "sort_order": 9060,
+     "desc": "미국 소비자물가 전년동월대비. 연준 정책의 핵심 변수",
+     "url": "https://fred.stlouisfed.org/series/CPIAUCSL"},
+    {"name": "美 근원 CPI", "series_id": "CPILFESL", "group": "cpi", "unit": "%", "mode": "yoy",
+     "country_label": "미국", "target": "2.0%", "sort_order": 9061,
+     "desc": "식품·에너지 제외 근원물가(전년동월대비). 추세 인플레 지표",
+     "url": "https://fred.stlouisfed.org/series/CPILFESL"},
+    {"name": "한국 CPI", "series_id": "KORCPIALLMINMEI", "group": "cpi", "unit": "%", "mode": "yoy",
+     "country_label": "한국", "target": "2.0%", "sort_order": 9062,
+     "desc": "한국 소비자물가 전년동월대비(OECD). 한은 목표 2%",
+     "url": "https://fred.stlouisfed.org/series/KORCPIALLMINMEI"},
+    {"name": "일본 CPI", "series_id": "JPNCPIALLMINMEI", "group": "cpi", "unit": "%", "mode": "yoy",
+     "country_label": "일본", "target": "2.0%", "sort_order": 9063,
+     "desc": "일본 소비자물가 전년동월대비(OECD). BOJ 목표 2%",
+     "url": "https://fred.stlouisfed.org/series/JPNCPIALLMINMEI"},
+    {"name": "대만 CPI", "series_id": "TWNPCPIPCPPPT", "group": "cpi", "unit": "%", "mode": "level",
+     "country_label": "대만", "target": "~2%", "sort_order": 9064,
+     "desc": "대만 소비자물가 상승률(FRED/IMF WEO 연간 계열). CBC 물가 안정 목표 참고",
+     "url": "https://fred.stlouisfed.org/series/TWNPCPIPCPPPT"},
+
+    # 생산자물가(PPI)
+    {"name": "美 PPI", "series_id": "PPIACO", "group": "ppi", "unit": "%", "mode": "yoy",
+     "country_label": "미국", "sort_order": 9080,
+     "desc": "미국 생산자물가지수 전년동월대비. CPI 선행 성격",
+     "url": "https://fred.stlouisfed.org/series/PPIACO"},
+    {"name": "한국 PPI", "series_id": "KORPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
+     "country_label": "한국", "sort_order": 9081,
+     "desc": "한국 제조업 생산자물가 전년동월대비(OECD/FRED). 최신성은 날짜 확인",
+     "url": "https://fred.stlouisfed.org/series/KORPPDMMINMEI"},
+    {"name": "일본 PPI", "series_id": "JPNPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
+     "country_label": "일본", "sort_order": 9082,
+     "desc": "일본 제조업 생산자물가 전년동월대비(OECD/FRED). 최신성은 날짜 확인",
+     "url": "https://fred.stlouisfed.org/series/JPNPPDMMINMEI"},
+
+    # 통화량(M2)
+    {"name": "美 M2 통화량", "series_id": "M2SL", "group": "money", "unit": "%", "mode": "yoy",
+     "country_label": "미국", "sort_order": 9100,
+     "desc": "미국 광의통화 전년동월대비. 유동성=자산가격 큰 흐름",
+     "url": "https://fred.stlouisfed.org/series/M2SL"},
+    {"name": "한국 M2 통화량", "series_id": "MYAGM2KRM189S", "group": "money", "unit": "%", "mode": "yoy",
+     "country_label": "한국", "sort_order": 9101,
+     "desc": "한국 광의통화(M2) 전년동월대비. 국내 유동성",
+     "url": "https://fred.stlouisfed.org/series/MYAGM2KRM189S"},
+]
+
+# ---------------------------------------------------------------------------
+# 링크 전용 매크로 — 값 자동수집이 마땅치 않아 해설 + 외부 링크만 제공.
+#   fields: name, group, desc, url, note, country_label, target(선택), sort_order
+# ---------------------------------------------------------------------------
+LINK_MACROS: List[Dict] = [
+    # FRED에서 안정적인 자동수집 계열을 찾기 어려운 항목
+    {"name": "대만 기준금리", "group": "policy", "country_label": "대만", "sort_order": 9043, "note": "TE",
+     "desc": "대만중앙은행(CBC) 정책금리",
+     "url": "https://tradingeconomics.com/taiwan/interest-rate"},
+    {"name": "대만 PPI", "group": "ppi", "country_label": "대만", "sort_order": 9083, "note": "TE",
+     "desc": "대만 생산자물가 전년동월대비",
+     "url": "https://tradingeconomics.com/taiwan/producer-prices-change"},
+    # 통화량(일본)
+    {"name": "일본 M2 통화량", "group": "money", "country_label": "일본", "sort_order": 9102, "note": "TE",
+     "desc": "일본 M2 전년동월대비. 엔 유동성",
+     "url": "https://tradingeconomics.com/japan/money-supply-m2"},
+    # 위험자산·심리
+    {"name": "코스피 변동성(VKOSPI)", "group": "risk", "country_label": "한국", "sort_order": 9120, "note": "Investing",
+     "desc": "코스피200 변동성 지수(한국판 VIX). 급등=국내 위험회피",
+     "url": "https://www.investing.com/indices/kospi-volatility"},
+    {"name": "공포탐욕지수", "group": "risk", "country_label": "미국", "sort_order": 9121, "note": "CNN",
+     "desc": "시장 심리 종합(0=극공포 ~ 100=극탐욕). CNN 집계",
+     "url": "https://edition.cnn.com/markets/fear-and-greed"},
 ]
 
 

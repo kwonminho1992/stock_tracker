@@ -82,6 +82,20 @@ main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
 .macro-title { color: var(--text-dim); font-size: 0.8rem; display: block; margin-bottom: 8px; }
 .macro-strip {
   display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.macro-group {
+  min-width: 0;
+}
+.macro-group-title {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.macro-group-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
   gap: 8px;
 }
@@ -99,6 +113,14 @@ a.macro-card:hover { border-color: var(--accent); }
 .macro-name { font-weight: 500; }
 .macro-val { font-variant-numeric: tabular-nums; font-weight: 700; }
 .macro-unit { font-size: 0.68rem; color: var(--text-dim); margin-left: 3px; }
+.macro-target {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: 5px;
+}
 .macro-ext { color: var(--text-dim); font-size: 0.72rem; margin-left: 3px; }
 .macro-desc { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
 .macro-err { color: var(--overheat-fg); }
