@@ -152,7 +152,9 @@ function macroCardHtml(a) {
       ? `<span class="macro-unit">${escapeHtml(a.currency)}</span>`
       : "";
   const target = a.macro_target
-    ? `<span class="macro-target">목표 ${escapeHtml(a.macro_target)}</span>`
+    ? `<span class="macro-target">${escapeHtml(
+        a.macro_target_label || "목표"
+      )} ${escapeHtml(a.macro_target)}</span>`
     : "";
   const top = `<span class="macro-name">${escapeHtml(
     a.name

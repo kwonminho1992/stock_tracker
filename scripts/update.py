@@ -23,6 +23,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from config import ASSETS, FRED_MACROS, HISTORY_DAYS, LINK_MACROS, MA_WINDOWS, enabled_assets
 from data_sources import fetch_asset
+from external_macro_source import fetch_tradingeconomics
 from fred_source import available as fred_available
 from fred_source import fetch_latest as fetch_fred_latest
 from fred_source import load_dotenv
@@ -146,6 +147,7 @@ def _macro_link_record(item: Dict, source: str, reason: Optional[str] = None) ->
         "exposure_type": "BENCHMARK",
         "macro_group": item.get("group"),
         "macro_target": item.get("target"),
+        "macro_target_label": item.get("target_label"),
         "disparity_meaningful": False,
         "listing_market": "-",
         "currency": item.get("unit") or "-",
@@ -189,6 +191,7 @@ def _fred_macro_record(item: Dict) -> Dict:
         "macro_group": item.get("group"),
         "macro_mode": mode,
         "macro_target": item.get("target"),
+        "macro_target_label": item.get("target_label"),
         "disparity_meaningful": False,
         "listing_market": "-",
         "currency": item.get("unit"),
@@ -208,6 +211,51 @@ def _fred_macro_record(item: Dict) -> Dict:
     }
 
 
+def _external_macro_record(item: Dict) -> Dict:
+    obs = fetch_tradingeconomics(item)
+    if obs is None:
+        return _macro_link_record(item, item.get("note") or "Link", "조회 실패")
+
+    country_label = item.get("country_label")
+    country = _country_code(country_label)
+    return {
+        "name": item["name"],
+        "code": item.get("code") or item["name"],
+        "ticker": item.get("code") or item["name"],
+        "market": country,
+        "country": country,
+        "country_label": country_label,
+        "sector": item.get("group"),
+        "asset_type": "macro_index",
+        "source": str(item.get("note") or "external").lower(),
+        "note": item.get("note"),
+        "sort_order": item.get("sort_order", 9999),
+        "ai_group": "00_INDEX",
+        "ai_subgroup": item.get("group"),
+        "product_group": item.get("desc"),
+        "exposure_type": "BENCHMARK",
+        "macro_group": item.get("group"),
+        "macro_target": item.get("target"),
+        "macro_target_label": item.get("target_label"),
+        "disparity_meaningful": False,
+        "listing_market": "-",
+        "currency": item.get("unit") or "-",
+        "price_source": item.get("note") or "external",
+        "is_adr": False,
+        "local_ticker": None,
+        "display_ticker": item.get("code") or item.get("note") or "",
+        "detail_url": item.get("url"),
+        "date": obs.get("asof"),
+        "close": obs.get("value"),
+        "change_pct": None,
+        "zone": None,
+        "zone_label": None,
+        "is_stale": False,
+        "is_suspicious": False,
+        "warning": None,
+    }
+
+
 def build_macro_records() -> List[Dict]:
     """FRED/API 매크로와 링크 전용 매크로를 latest payload용 레코드로 변환."""
     records: List[Dict] = []
@@ -215,7 +263,11 @@ def build_macro_records() -> List[Dict]:
         records.extend(_macro_link_record(item, "FRED", "API 키 필요") for item in FRED_MACROS)
     else:
         records.extend(_fred_macro_record(item) for item in FRED_MACROS)
-    records.extend(_macro_link_record(item, item.get("note") or "Link") for item in LINK_MACROS)
+    for item in LINK_MACROS:
+        if item.get("parser"):
+            records.append(_external_macro_record(item))
+        else:
+            records.append(_macro_link_record(item, item.get("note") or "Link"))
     return records
 
 
