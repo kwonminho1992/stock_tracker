@@ -168,43 +168,56 @@ def _macro(so, name, code, clabel, unit, group, desc, url):
 ASSETS: List[Dict] = [
     # ===== 매크로 참고(상단 스트립) — 값·등락은 야후, 상세는 링크. 이격도 판정 안 함 =====
     _macro(9001, "원/달러 환율", "KRW=X", "한국", "원", "fx",
-           "원화 가치. 상승=원화 약세(수출주 유리·외국인 매도 압력·수입물가↑)",
+           "상승(원화약세)=수출 반도체주 실적엔 우호적이나 외국인 순매도 압력 신호. "
+           "1,400원대 이상 급등은 국내 증시 자금이탈 경계 구간",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW"),
     _macro(9002, "엔/달러 환율", "JPY=X", "일본", "엔", "fx",
-           "엔화 가치. 엔 약세=일본 수출주 유리·엔캐리 트레이드 확대 신호",
+           "엔 약세=일본 장비·소재주(도쿄일렉트론 등) 실적 우호. "
+           "급격한 엔 강세 반전은 엔캐리 청산→글로벌 위험자산 매도로 번질 수 있음(2024.8 사례)",
            "https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDJPY"),
     _macro(9003, "달러인덱스 DXY", "DX-Y.NYB", "미국", "pt", "fx",
-           "주요 6개 통화 대비 달러 강세. 상승=신흥국·원자재·위험자산에 역풍",
+           "주요 6개 통화 대비 달러 가치. 상승=글로벌 유동성 긴축·신흥국(한국 포함) 증시 역풍. "
+           "약달러 전환은 위험자산 전반에 순풍",
            "https://www.investing.com/indices/usdollar"),
     _macro(9004, "美 10년 국채금리", "^TNX", "미국", "%", "rates",
-           "미국 10년물 금리. 상승=성장주·기술주 밸류에이션 부담·할인율↑",
+           "성장주 밸류에이션의 분모(할인율). 급등=나스닥·반도체 멀티플 압박, "
+           "4.5%+ 구간은 기술주 조정 촉발 이력. 하락=성장주 순풍",
            "https://www.investing.com/rates-bonds/u.s.-10-year-bond-yield"),
     _macro(9005, "美 단기금리(13주)", "^IRX", "미국", "%", "rates",
-           "미국 13주 T-bill 금리. 연준 정책금리 방향 대용 지표",
+           "연준 정책금리를 실시간 반영하는 대용 지표. 10년물과의 역전(장단기 역전)은 "
+           "경기침체 선행 신호로 주시",
            "https://www.investing.com/rates-bonds/u.s.-3-month-bond-yield"),
     _macro(9006, "WTI 유가", "CL=F", "미국", "$", "commodity",
-           "서부텍사스유 선물. 상승=인플레·에너지 비용↑, 경기·물가의 핵심 변수",
+           "급등=인플레 재점화→금리인하 지연→성장주 부담의 연쇄. "
+           "중동 리스크(호르무즈) 프리미엄 반영 여부 확인. 데이터센터 전력비용과도 연동",
            "https://www.investing.com/commodities/crude-oil"),
     _macro(9007, "금", "GC=F", "미국", "$", "commodity",
-           "금 선물. 안전자산·인플레 헤지, 실질금리·달러와 역상관 경향",
+           "실질금리·달러와 역상관인 안전자산. 주식과 동반 급등하면 "
+           "인플레 헤지·통화가치 불신 수요를 의심(유동성 장세 신호)",
            "https://www.investing.com/commodities/gold"),
     _macro(9008, "은", "SI=F", "미국", "$", "commodity",
-           "은 선물. 안전자산+산업금속(태양광·전자) 성격을 함께 가짐",
+           "안전자산+산업금속(태양광·전자부품) 이중 성격. "
+           "금 대비 은의 상대 강세는 위험선호·산업수요 회복 쪽 신호",
            "https://www.investing.com/commodities/silver"),
     _macro(9009, "구리", "HG=F", "미국", "$", "commodity",
-           "구리 선물('닥터 코퍼'). 제조업·글로벌 경기의 선행 지표",
+           "'닥터 코퍼' — 제조업 경기 선행 지표. AI 데이터센터·전력망 증설의 실물 수요 확인용. "
+           "구리 강세=전력기기(변압기·배전) 수요 사이클 지속 방증",
            "https://www.investing.com/commodities/copper"),
     _macro(9010, "천연가스", "NG=F", "미국", "$", "commodity",
-           "천연가스 선물. 난방·전력·데이터센터 전력비용의 변수",
+           "미국 발전 연료의 40%+. 급등=데이터센터 전력비용·전기요금 상승 압력. "
+           "AI 전력수요 서사(가스터빈·SMR 테마)의 배경 변수",
            "https://www.investing.com/commodities/natural-gas"),
     _macro(9011, "비트코인", "BTC-USD", "미국", "$", "risk",
-           "위험자산·유동성 심리 바로미터. 급등락=리스크온/오프 신호",
+           "글로벌 유동성·위험선호의 가장 민감한 바로미터. 주식보다 먼저 꺾이는 경우가 많아 "
+           "리스크오프 조기경보로 활용. 급락 시 기술주 동반 조정 경계",
            "https://finance.yahoo.com/quote/BTC-USD"),
     _macro(9012, "이더리움", "ETH-USD", "미국", "$", "risk",
-           "2위 암호자산. 알트코인·위험선호(리스크온) 심리에 민감",
+           "BTC 대비 고베타 위험자산. ETH/BTC 비율 상승=시장 전반의 공격적 위험선호(과열 후반부 특징), "
+           "하락=보수화 진행",
            "https://finance.yahoo.com/quote/ETH-USD"),
     _macro(9013, "VIX 변동성", "^VIX", "미국", "pt", "risk",
-           "S&P500 변동성('공포지수'). 급등=위험회피 심리 확대",
+           "S&P500 옵션 내재변동성('공포지수'). 15 이하=안일(과열 동반 시 경계), "
+           "20+=불안 확대, 30+=패닉(역발상 재진입 검토 구간)",
            "https://www.investing.com/indices/volatility-s-p-500"),
 
     # ===== 00 시장지수 =====
@@ -221,11 +234,11 @@ ASSETS: List[Dict] = [
 
     # ===== 01 AI 연산·ASIC =====
     A(100, "01_COMPUTE_ASIC", "엔비디아", "미국", "NVDA", "AI 가속기", "GPU", "데이터센터 GPU/AI 가속기 절대 핵심", "핵심"),
-    A(101, "01_COMPUTE_ASIC", "AMD", "미국", "AMD", "AI 가속기", "GPU/CPU", "GPU·CPU·AI 가속기", "핵심"),
+    A(101, "01_COMPUTE_ASIC", "AMD", "미국", "AMD", "AI 가속기", "GPU/CPU", "MI 시리즈 AI 가속기·서버 CPU — 엔비디아 2인자 경쟁", "핵심"),
     A(102, "01_COMPUTE_ASIC", "브로드컴", "미국", "AVGO", "ASIC/네트워크", "ASIC/네트워크", "커스텀 AI ASIC·스위치 ASIC·네트워킹", "핵심"),
     A(103, "01_COMPUTE_ASIC", "마벨", "미국", "MRVL", "ASIC/네트워크", "ASIC/광DSP", "커스텀 ASIC·광 DSP·데이터센터 연결", "핵심"),
     A(104, "01_COMPUTE_ASIC", "퀄컴", "미국", "QCOM", "AI 추론/SoC", "엣지AI/추론", "엣지 AI·저전력 추론·모바일 SoC", "2차"),
-    A(105, "01_COMPUTE_ASIC", "미디어텍", "대만", "2454.TW", "SoC", "SoC", "엣지 AI·모바일·ASIC 가능성", "2차"),
+    A(105, "01_COMPUTE_ASIC", "미디어텍", "대만", "2454.TW", "SoC", "SoC", "모바일 SoC 출하 1위·구글 TPU 협력 등 ASIC 확장", "2차"),
     A(106, "01_COMPUTE_ASIC", "알칩 테크놀로지", "대만", "3661.TW", "ASIC 디자인", "ASIC 디자인하우스", "AI ASIC 설계 서비스·고변동성", "고위험"),
     A(107, "01_COMPUTE_ASIC", "Astera Labs", "미국", "ALAB", "AI 연결", "PCIe/CXL", "AI 서버 PCIe·CXL 연결 칩", "핵심"),
     A(108, "01_COMPUTE_ASIC", "Credo Technology", "미국", "CRDO", "AI 연결", "SerDes/DSP", "AI 클러스터 고속 연결·액티브 전기케이블", "고위험"),
@@ -237,9 +250,9 @@ ASSETS: List[Dict] = [
     A(153, "02_EDA_IP", "Siemens", "독일", "SIE.DE", "EDA/산업소프트웨어", "EDA/산업SW", "Siemens EDA 포함·순수 EDA주는 아님", "2차"),
 
     # ===== 03 메모리·스토리지 =====
-    A(200, "03_MEMORY_STORAGE", "SK하이닉스", "한국", "000660.KS", "메모리", "HBM/DRAM/NAND", "HBM·DRAM·낸드 핵심 공급자", "핵심"),
-    A(201, "03_MEMORY_STORAGE", "삼성전자", "한국", "005930.KS", "메모리/종합반도체", "HBM/DRAM/NAND/파운드리", "메모리·HBM·낸드·파운드리", "핵심"),
-    A(202, "03_MEMORY_STORAGE", "마이크론", "미국", "MU", "메모리", "HBM/DRAM/NAND", "미국 메모리 핵심 기업", "핵심"),
+    A(200, "03_MEMORY_STORAGE", "SK하이닉스", "한국", "000660.KS", "메모리", "HBM/DRAM/NAND", "HBM 점유율 1위 — 엔비디아 주력 공급사", "핵심"),
+    A(201, "03_MEMORY_STORAGE", "삼성전자", "한국", "005930.KS", "메모리/종합반도체", "HBM/DRAM/NAND/파운드리", "DRAM·낸드 1위 + HBM 추격 + 파운드리 종합", "핵심"),
+    A(202, "03_MEMORY_STORAGE", "마이크론", "미국", "MU", "메모리", "HBM/DRAM/NAND", "HBM 3강 중 미국 유일 — 미국 메모리 대표", "핵심"),
     A(203, "03_MEMORY_STORAGE", "키옥시아", "일본", "285A.T", "메모리", "NAND", "낸드플래시·AI 스토리지 수혜", "핵심"),
     A(204, "03_MEMORY_STORAGE", "Sandisk", "미국", "SNDK", "메모리", "NAND/SSD", "낸드·SSD·AI 데이터센터 스토리지", "핵심"),
     A(205, "03_MEMORY_STORAGE", "Western Digital", "미국", "WDC", "스토리지", "HDD/스토리지", "대용량 데이터 저장·HDD 중심", "2차"),
@@ -290,7 +303,7 @@ ASSETS: List[Dict] = [
     A(508, "07_PACKAGING_SUBSTRATE_PCB", "이수페타시스", "한국", "007660.KS", "PCB", "고다층 PCB", "AI 가속기용 고다층 PCB·고변동성", "고위험"),
 
     # ===== 08 MLCC·수동부품 =====
-    A(600, "08_MLCC_PASSIVE_COMPONENT", "무라타제작소", "일본", "6981.T", "MLCC", "MLCC", "MLCC 세계 최상위권", "핵심"),
+    A(600, "08_MLCC_PASSIVE_COMPONENT", "무라타제작소", "일본", "6981.T", "MLCC", "MLCC", "MLCC 세계 1위 — AI 서버용 고용량·고신뢰 MLCC", "핵심"),
     A(601, "08_MLCC_PASSIVE_COMPONENT", "삼성전기", "한국", "009150.KS", "MLCC/기판", "MLCC/FC-BGA", "MLCC 세계 상위권·FC-BGA 기판", "핵심"),
     A(602, "08_MLCC_PASSIVE_COMPONENT", "타이요유덴", "일본", "6976.T", "MLCC", "MLCC/인덕터", "MLCC·인덕터·수동부품", "2차"),
     A(603, "08_MLCC_PASSIVE_COMPONENT", "TDK", "일본", "6762.T", "수동부품", "수동부품/배터리", "MLCC·인덕터·소형 배터리", "2차"),
@@ -313,7 +326,7 @@ ASSETS: List[Dict] = [
     A(803, "10_POWER_COOLING_GRID", "ABB", "스위스", "ABBN.SW", "전력/자동화", "전력기기/자동화", "전력기기·배전·자동화", "2차"),
     A(804, "10_POWER_COOLING_GRID", "GE Vernova", "미국", "GEV", "전력인프라", "전력망/발전", "전력망·발전 인프라", "2차"),
     A(805, "10_POWER_COOLING_GRID", "Siemens Energy", "독일", "ENR.DE", "전력인프라", "전력망/발전", "전력망·변전·발전 인프라", "2차"),
-    A(806, "10_POWER_COOLING_GRID", "Delta Electronics", "대만", "2308.TW", "전원/냉각", "전원/냉각", "전원공급·열관리 솔루션", "핵심"),
+    A(806, "10_POWER_COOLING_GRID", "Delta Electronics", "대만", "2308.TW", "전원/냉각", "전원/냉각", "AI 서버 전원(PSU)·액체냉각 세계 최대급", "핵심"),
     A(807, "10_POWER_COOLING_GRID", "Lite-On Technology", "대만", "2301.TW", "전원공급", "서버 PSU", "데이터센터 전원공급장치·파워모듈", "2차"),
     A(808, "10_POWER_COOLING_GRID", "Monolithic Power Systems", "미국", "MPWR", "전력반도체", "PMIC/전원칩", "AI 서버 전력관리 반도체", "핵심"),
     A(809, "10_POWER_COOLING_GRID", "HD현대일렉트릭", "한국", "267260.KS", "전력기기", "변압기/전력기기", "변압기·전력기기", "2차"),
@@ -324,20 +337,20 @@ ASSETS: List[Dict] = [
     A(814, "10_POWER_COOLING_GRID", "Bloom Energy", "미국", "BE", "전력공급", "연료전지/분산전원", "AI 데이터센터 전력 공급 테마", "고위험"),
 
     # ===== 11 AI 서버·ODM =====
-    A(900, "11_AI_SERVER_ODM", "Super Micro Computer", "미국", "SMCI", "AI 서버", "AI 서버/랙", "AI 서버·랙 시스템·고변동성", "고위험"),
-    A(901, "11_AI_SERVER_ODM", "Dell Technologies", "미국", "DELL", "AI 서버", "AI 서버/엔터프라이즈", "AI 서버·엔터프라이즈 인프라", "핵심"),
-    A(902, "11_AI_SERVER_ODM", "HPE", "미국", "HPE", "AI 서버", "AI 서버/HPC", "서버·HPC·엔터프라이즈 인프라", "2차"),
-    A(903, "11_AI_SERVER_ODM", "Foxconn Hon Hai", "대만", "2317.TW", "EMS/ODM", "AI 서버 ODM", "AI 서버 위탁생산 핵심", "핵심"),
-    A(904, "11_AI_SERVER_ODM", "Quanta Computer", "대만", "2382.TW", "ODM", "AI 서버 ODM", "AI 서버 ODM", "핵심"),
-    A(905, "11_AI_SERVER_ODM", "Wiwynn", "대만", "6669.TW", "ODM", "하이퍼스케일 서버", "하이퍼스케일 AI 서버 ODM", "고위험"),
-    A(906, "11_AI_SERVER_ODM", "Wistron", "대만", "3231.TW", "ODM", "AI 서버 ODM", "AI 서버·서버 ODM", "2차"),
-    A(907, "11_AI_SERVER_ODM", "Inventec", "대만", "2356.TW", "ODM", "서버 ODM", "서버·노트북·AI 서버 ODM", "2차"),
-    A(908, "11_AI_SERVER_ODM", "Gigabyte", "대만", "2376.TW", "서버/메인보드", "GPU 서버/메인보드", "AI 서버·메인보드·부품", "2차"),
+    A(900, "11_AI_SERVER_ODM", "Super Micro Computer", "미국", "SMCI", "AI 서버", "AI 서버/랙", "GPU 서버 조립 속도전 강자·실적 변동성 큼", "고위험"),
+    A(901, "11_AI_SERVER_ODM", "Dell Technologies", "미국", "DELL", "AI 서버", "AI 서버/엔터프라이즈", "기업향 AI 서버 판매 1위권·xAI 등 대형 수주", "핵심"),
+    A(902, "11_AI_SERVER_ODM", "HPE", "미국", "HPE", "AI 서버", "AI 서버/HPC", "슈퍼컴(Cray)·기업 AI 서버·네트워킹(주니퍼)", "2차"),
+    A(903, "11_AI_SERVER_ODM", "Foxconn Hon Hai", "대만", "2317.TW", "EMS/ODM", "AI 서버 ODM", "엔비디아 GB 랙서버 조립 최대 EMS·세계 1위 위탁제조", "핵심"),
+    A(904, "11_AI_SERVER_ODM", "Quanta Computer", "대만", "2382.TW", "ODM", "AI 서버 ODM", "하이퍼스케일러 직납 AI 서버 ODM 선두", "핵심"),
+    A(905, "11_AI_SERVER_ODM", "Wiwynn", "대만", "6669.TW", "ODM", "하이퍼스케일 서버", "MS·메타향 데이터센터 서버 전문(순수 하이퍼스케일 노출)", "고위험"),
+    A(906, "11_AI_SERVER_ODM", "Wistron", "대만", "3231.TW", "ODM", "AI 서버 ODM", "엔비디아 GPU 베이스보드·AI 서버 조립", "2차"),
+    A(907, "11_AI_SERVER_ODM", "Inventec", "대만", "2356.TW", "ODM", "서버 ODM", "서버 메인보드·AI 서버 2선 ODM", "2차"),
+    A(908, "11_AI_SERVER_ODM", "Gigabyte", "대만", "2376.TW", "서버/메인보드", "GPU 서버/메인보드", "GPU 서버 완제품·메인보드(중소형 클라우드향)", "2차"),
     A(909, "11_AI_SERVER_ODM", "Celestica", "미국", "CLS", "EMS/ODM", "AI 서버/네트워킹 ODM", "하이퍼스케일러 AI 서버·스위치 위탁제조", "핵심"),
 
     # ===== 12 클라우드·CAPEX(수요) =====
     A(950, "12_CLOUD_CAPEX", "Microsoft", "미국", "MSFT", "클라우드/CAPEX", "Azure/AI 인프라", "AI 데이터센터 CAPEX 방향성 핵심", "수요"),
-    A(951, "12_CLOUD_CAPEX", "Amazon", "미국", "AMZN", "클라우드/CAPEX", "AWS/AI 인프라", "AI 데이터센터 수요·자체칩", "수요"),
+    A(951, "12_CLOUD_CAPEX", "Amazon", "미국", "AMZN", "클라우드/CAPEX", "AWS/AI 인프라", "AWS CAPEX·자체칩(트레이니엄)으로 수요·경쟁 양면", "수요"),
     A(952, "12_CLOUD_CAPEX", "Alphabet", "미국", "GOOGL", "클라우드/CAPEX", "Google Cloud/TPU", "AI 인프라 수요·TPU", "수요"),
     A(953, "12_CLOUD_CAPEX", "Meta Platforms", "미국", "META", "클라우드/CAPEX", "AI 인프라/MTIA", "AI 데이터센터 투자 수요 핵심", "수요"),
     A(954, "12_CLOUD_CAPEX", "Oracle", "미국", "ORCL", "클라우드/CAPEX", "OCI/AI 인프라", "AI 클라우드 인프라 수요", "수요"),
@@ -356,71 +369,81 @@ FRED_MACROS: List[Dict] = [
     # 장기금리(월간, OECD)
     {"name": "한국 10년 금리", "series_id": "IRLTLT01KRM156N", "group": "rates", "unit": "%", "mode": "level",
      "country_label": "한국", "sort_order": 9020,
-     "desc": "한국 10년물 국채금리(월간). 유동성·환율·부동산과 연동",
+     "desc": "국내 장기금리(월간). 상승=성장주 할인율 부담·부동산 PF 부담, 미국 금리와의 격차 확대는 원화 약세 압력",
      "url": "https://fred.stlouisfed.org/series/IRLTLT01KRM156N"},
     {"name": "일본 10년 금리", "series_id": "IRLTLT01JPM156N", "group": "rates", "unit": "%", "mode": "level",
      "country_label": "일본", "sort_order": 9021,
-     "desc": "일본 10년물 국채금리(월간). BOJ 정책·엔화와 직결",
+     "desc": "BOJ 긴축 정도의 척도(월간). 급등=엔캐리 청산 위험→글로벌 기술주 변동성 확대 트리거 가능",
      "url": "https://fred.stlouisfed.org/series/IRLTLT01JPM156N"},
 
     # 기준금리/정책금리
     {"name": "美 기준금리", "series_id": "FEDFUNDS", "group": "policy", "unit": "%", "mode": "level",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9040,
-     "desc": "연방기금금리(실효). 목표 표시는 금리 목표가 아니라 Fed의 장기 물가목표",
+     "desc": "글로벌 유동성의 수도꼭지. 인하 사이클=위험자산·성장주 순풍, 동결 장기화=밸류에이션 상단 제한. "
+             "(목표 표시는 Fed 물가목표 2%)",
      "url": "https://fred.stlouisfed.org/series/FEDFUNDS"},
     {"name": "한국 기준금리", "series_id": "INTDSRKRM193N", "group": "policy", "unit": "%", "mode": "level",
      "country_label": "한국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9041,
-     "desc": "FRED/IMF 할인율 계열. 목표 표시는 금리 목표가 아니라 한은 물가안정목표",
+     "desc": "국내 유동성·환율 방어의 균형점. 미국보다 과도하게 낮으면 원화 약세·자금이탈 압력. "
+             "(목표 표시는 한은 물가목표 2%)",
      "url": "https://fred.stlouisfed.org/series/INTDSRKRM193N"},
     {"name": "일본 정책금리", "series_id": "IRSTCB01JPM156N", "group": "policy", "unit": "%", "mode": "level",
      "country_label": "일본", "target": "2.0%", "target_label": "물가목표", "sort_order": 9042,
-     "desc": "일본 중앙은행 단기 정책금리 계열. 목표 표시는 금리 목표가 아니라 BOJ 물가목표",
+     "desc": "인상=엔 강세→엔캐리 청산 압력(글로벌 기술주에 단기 충격 이력). "
+             "동결·완화 유지=위험자산에 우호. (목표 표시는 BOJ 물가목표 2%)",
      "url": "https://fred.stlouisfed.org/series/IRSTCB01JPM156N"},
 
     # 물가(CPI) — 전년동월대비 %
     {"name": "美 CPI", "series_id": "CPIAUCSL", "group": "cpi", "unit": "%", "mode": "yoy",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9060,
-     "desc": "미국 소비자물가 전년동월대비. 연준 정책의 핵심 변수",
+     "desc": "연준 금리 경로를 결정하는 1순위 지표(전년동월비). 2%대 안착=금리인하 여지→성장주 순풍, "
+             "재반등=인하 지연→밸류에이션 부담",
      "url": "https://fred.stlouisfed.org/series/CPIAUCSL"},
     {"name": "美 근원 CPI", "series_id": "CPILFESL", "group": "cpi", "unit": "%", "mode": "yoy",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9061,
-     "desc": "식품·에너지 제외 근원물가(전년동월대비). 추세 인플레 지표",
+     "desc": "식품·에너지 제외 추세 물가(전년동월비). 헤드라인보다 끈적해 연준이 더 중시 — "
+             "이게 안 내려오면 금리인하 기대는 밀린다",
      "url": "https://fred.stlouisfed.org/series/CPILFESL"},
     {"name": "한국 CPI", "series_id": "KORCPIALLMINMEI", "group": "cpi", "unit": "%", "mode": "yoy",
      "country_label": "한국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9062,
-     "desc": "한국 소비자물가 전년동월대비(OECD). 한은 목표 2%",
+     "desc": "한은 금리인하 여력의 전제조건(전년동월비). 2% 안착=완화 여지, "
+             "환율발 수입물가 재상승 여부가 관건",
      "url": "https://fred.stlouisfed.org/series/KORCPIALLMINMEI"},
     {"name": "일본 CPI", "series_id": "FPCPITOTLZGJPN", "group": "cpi", "unit": "%", "mode": "level",
      "country_label": "일본", "target": "2.0%", "target_label": "물가목표", "sort_order": 9063,
-     "desc": "일본 소비자물가 상승률(FRED/World Bank 연간 계열). BOJ 목표 2%",
+     "desc": "2% 위 정착 여부가 BOJ 추가 긴축(→엔캐리 청산 리스크)의 방아쇠. 연간 계열이라 속보성은 낮음",
      "url": "https://fred.stlouisfed.org/series/FPCPITOTLZGJPN"},
     {"name": "대만 CPI", "series_id": "TWNPCPIPCPPPT", "group": "cpi", "unit": "%", "mode": "level",
      "country_label": "대만", "target": "~2%", "target_label": "물가목표", "sort_order": 9064,
-     "desc": "대만 소비자물가 상승률(FRED/IMF WEO 연간 계열). CBC 물가 안정 목표 참고",
+     "desc": "TSMC 밸류체인이 있는 대만의 물가 안정도. 급등 시 대만달러·가권지수 변동성 확대 참고(연간 계열)",
      "url": "https://fred.stlouisfed.org/series/TWNPCPIPCPPPT"},
 
     # 생산자물가(PPI)
     {"name": "美 PPI", "series_id": "PPIACO", "group": "ppi", "unit": "%", "mode": "yoy",
      "country_label": "미국", "sort_order": 9080,
-     "desc": "미국 생산자물가지수 전년동월대비. CPI 선행 성격",
+     "desc": "기업 단계 물가(전년동월비) — CPI에 수개월 선행하는 경향. "
+             "반등 시 소비자물가 재상승→금리인하 지연 신호로 선제 해석",
      "url": "https://fred.stlouisfed.org/series/PPIACO"},
     {"name": "한국 PPI", "series_id": "KORPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
      "country_label": "한국", "sort_order": 9081,
-     "desc": "한국 제조업 생산자물가 전년동월대비(OECD/FRED). 최신성은 날짜 확인",
+     "desc": "국내 제조업 출하물가(전년동월비). 반도체 판가 사이클과 부분 연동 — "
+             "상승 전환은 제조업 마진 회복 신호이기도(발표 지연 있음)",
      "url": "https://fred.stlouisfed.org/series/KORPPDMMINMEI"},
     {"name": "일본 PPI", "series_id": "JPNPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
      "country_label": "일본", "sort_order": 9082,
-     "desc": "일본 제조업 생산자물가 전년동월대비(OECD/FRED). 최신성은 날짜 확인",
+     "desc": "일본 제조업 출하물가(전년동월비). 엔 약세→수입물가→PPI 경로 확인용(발표 지연 있음)",
      "url": "https://fred.stlouisfed.org/series/JPNPPDMMINMEI"},
 
     # 통화량(M2)
     {"name": "美 M2 통화량", "series_id": "M2SL", "group": "money", "unit": "%", "mode": "yoy",
      "country_label": "미국", "sort_order": 9100,
-     "desc": "미국 광의통화 전년동월대비. 유동성=자산가격 큰 흐름",
+     "desc": "글로벌 자산가격의 큰 물줄기(전년동월비). 증가율 확대=유동성 장세 지속, "
+             "위축 전환=밸류에이션 되돌림 압력의 배경",
      "url": "https://fred.stlouisfed.org/series/M2SL"},
     {"name": "한국 M2 통화량", "series_id": "MYAGM2KRM189S", "group": "money", "unit": "%", "mode": "yoy",
      "country_label": "한국", "sort_order": 9101,
-     "desc": "한국 광의통화(M2) 전년동월대비. 국내 유동성",
+     "desc": "국내 유동성 총량(전년동월비). 코스피 유동성 장세의 연료 게이지 — "
+             "확대기에 지수 멀티플이 함께 늘어나는 경향",
      "url": "https://fred.stlouisfed.org/series/MYAGM2KRM189S"},
 ]
 
@@ -432,23 +455,25 @@ LINK_MACROS: List[Dict] = [
     # FRED에서 안정적인 자동수집 계열을 찾기 어려운 항목
     {"name": "대만 기준금리", "group": "policy", "country_label": "대만", "sort_order": 9043, "note": "TE",
      "unit": "%", "target": "~2%", "target_label": "물가목표", "parser": "te_last_recorded_percent",
-     "desc": "대만중앙은행(CBC) 정책금리. 목표 표시는 금리 목표가 아니라 물가 안정 목표 참고",
+     "desc": "대만중앙은행(CBC) 정책금리. TSMC 밸류체인 자금환경·대만달러 방향의 배경 변수",
      "url": "https://tradingeconomics.com/taiwan/interest-rate"},
     {"name": "대만 PPI", "group": "ppi", "country_label": "대만", "sort_order": 9083, "note": "TE",
      "unit": "%", "parser": "te_ppi_change_percent",
-     "desc": "대만 생산자물가 전년동월대비",
+     "desc": "대만 제조업 출하물가(전년동월비). 파운드리·전자 밸류체인의 판가·비용 환경 참고",
      "url": "https://tradingeconomics.com/taiwan/producer-prices-change"},
     # 통화량(일본)
     {"name": "일본 M2 통화량", "group": "money", "country_label": "일본", "sort_order": 9102, "note": "TE",
      "unit": "JPY bn", "parser": "te_money_level",
-     "desc": "일본 M2 잔액(JPY Billion). 엔 유동성",
+     "desc": "엔 유동성 총량. BOJ 긴축으로 위축되면 엔캐리 자금 환류→글로벌 위험자산에 역풍 가능",
      "url": "https://tradingeconomics.com/japan/money-supply-m2"},
     # 위험자산·심리
     {"name": "코스피 변동성(VKOSPI)", "group": "risk", "country_label": "한국", "sort_order": 9120, "note": "Investing",
-     "desc": "코스피200 변동성 지수(한국판 VIX). 급등=국내 위험회피",
+     "desc": "한국판 VIX(코스피200 옵션 변동성). 급등=국내 위험회피 확산, "
+             "저변동+지수 과열 조합은 안일함 경계 신호",
      "url": "https://www.investing.com/indices/kospi-volatility"},
     {"name": "공포탐욕지수", "group": "risk", "country_label": "미국", "sort_order": 9121, "note": "CNN",
-     "desc": "시장 심리 종합(0=극공포 ~ 100=극탐욕). CNN 집계",
+     "desc": "CNN 집계 시장심리(0=극공포~100=극탐욕). 80+ 극탐욕은 이격도 과열과 겹치면 "
+             "추격매수 자제 신호, 20 이하 극공포는 역발상 참고",
      "url": "https://edition.cnn.com/markets/fear-and-greed"},
 ]
 

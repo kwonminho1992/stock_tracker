@@ -510,6 +510,47 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   font-size: 0.8rem;
 }
 
+/* 부록 · 참고 자료 */
+.refs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ref-card {
+  display: block;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+.ref-card:hover { border-color: var(--accent); }
+.ref-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ref-name { font-weight: 600; font-size: 0.92rem; }
+.ref-name::after { content: " ↗"; color: var(--text-dim); font-size: 0.75em; }
+.ref-tag {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.ref-desc {
+  margin: 6px 0 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.refs-note { margin: 10px 0 0; color: var(--text-dim); font-size: 0.72rem; }
+
 .site-footer .sources { margin-bottom: 8px; }
 .site-footer strong { color: var(--text); font-weight: 600; }
 
@@ -522,6 +563,8 @@ tbody tr.selected { outline: 1px solid var(--accent); outline-offset: -1px; }
   .summary-text { font-size: 0.9rem; }
   .summary-badge { font-size: 0.8rem; }
   .summary-idx, .summary-count { font-size: 0.75rem; }
+  .refs-grid { grid-template-columns: 1fr; gap: 8px; }
+  .ref-desc { font-size: 0.76rem; }
   .macro-section { margin-bottom: 12px; }
   .macro-toggle {
     align-items: flex-start;
