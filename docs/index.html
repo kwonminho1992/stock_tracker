@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>시장 · 종목 이격도 트래커</title>
+  <meta name="theme-color" content="#0f141b" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <!-- iOS 홈화면 추가 지원 -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="이격도" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -21,6 +29,18 @@
   </header>
 
   <main>
+    <section id="summary-card" class="summary-card" aria-label="종합 판정 요약" hidden>
+      <div class="summary-headline">
+        <span id="summary-badge" class="summary-badge"></span>
+        <span id="summary-text" class="summary-text"></span>
+      </div>
+      <div id="summary-indices" class="summary-indices"></div>
+      <div id="summary-counts" class="summary-counts"></div>
+      <p class="summary-note">
+        판정 이격도(종목 25일·지수/ETF 50일) 고정 기준의 참고 신호입니다. 매매 신호가 아닙니다.
+      </p>
+    </section>
+
     <section class="legend" aria-label="구간 범례">
       <span class="legend-item zone-overheat">과열 (기준 이격도 ≥130)</span>
       <span class="legend-item zone-caution">경계 (120–130)</span>

@@ -1,0 +1,32 @@
+{
+  "name": "AI 병목 밸류체인 이격도 대시보드",
+  "short_name": "이격도",
+  "description": "AI 병목 밸류체인 종목·지수의 이동평균 이격도로 단기 과열도를 점검하는 대시보드",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f141b",
+  "theme_color": "#0f141b",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

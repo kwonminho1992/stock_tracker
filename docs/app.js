@@ -297,6 +297,7 @@ async function loadData() {
     DATA.latest = latest;
     DATA.history = history || {};
     renderHeader();
+    renderSummary();
     renderMacroStrip();
     renderTable();
     populateAssetSelect();
@@ -337,6 +338,113 @@ function renderHeader() {
       : runType === "close"
       ? "종가 기준"
       : runType || "";
+}
+
+// ---------------------------------------------------------------------------
+// 종합 판정 요약 카드
+//   "시장 전체가 과열인가? 시장과 주도주(핵심종목) 과열이 동시에 왔는가?" 를
+//   페이지 최상단에서 한 줄로 답한다. 고정 기준 참고 신호이며 매매 신호가 아니다.
+// ---------------------------------------------------------------------------
+
+// 요약에 대표로 보여줄 시장 지수 (코드 기준)
+const SUMMARY_INDEX_CODES = ["^KS11", "^NDX", "^SOX"];
+
+function renderSummary() {
+  const card = document.getElementById("summary-card");
+  if (!card) return;
+  const assets = ((DATA.latest && DATA.latest.assets) || []).filter(
+    (a) => !a.error && a.zone && a.disparity_meaningful !== false
+  );
+  if (assets.length === 0) {
+    card.hidden = true;
+    return;
+  }
+
+  const isIndex = (a) => String(a.asset_type || "").endsWith("_index");
+  const indices = assets.filter(isIndex);
+  const stocks = assets.filter((a) => !isIndex(a)); // 개별종목 + ETF
+  const core = stocks.filter((a) => a.exposure_type === "CORE");
+  const count = (arr, z) => arr.filter((a) => a.zone === z).length;
+
+  const hotIndices = indices.filter(
+    (a) => a.zone === "overheat" || a.zone === "caution"
+  );
+  const coreOver = count(core, "overheat");
+  const stockOver = count(stocks, "overheat");
+  const stockCaution = count(stocks, "caution");
+  const cooldownRatio = stocks.length
+    ? count(stocks, "cooldown") / stocks.length
+    : 0;
+  const coreHotRatio = core.length ? coreOver / core.length : 0;
+
+  // --- 신호 결정(심각한 것부터) ---
+  let level, headline;
+  if (hotIndices.length > 0 && coreOver > 0) {
+    level = "danger";
+    headline = `시장(${hotIndices.map((a) => a.name).join("·")})·핵심종목 ${coreOver}개 동시 과열 — 신규매수·레버리지 주의`;
+  } else if (coreHotRatio >= 0.2) {
+    level = "danger";
+    headline = `핵심종목 과열 확산(${coreOver}/${core.length}) — 추격매수 자제 구간`;
+  } else if (stockOver > 0) {
+    level = "warn";
+    headline = `부분 과열 — ${stockOver}개 종목 과열 (시장 지수는 과열 아님)`;
+  } else if (stockCaution >= 5) {
+    level = "warn";
+    headline = `경계 종목 ${stockCaution}개 — 과열 진입 여부 관찰 구간`;
+  } else if (cooldownRatio >= 0.6) {
+    level = "cool";
+    headline = `과열해소 우세(종목 ${Math.round(cooldownRatio * 100)}%) — 조정 후 재진입 검토 가능 구간`;
+  } else {
+    level = "ok";
+    headline = "과열 신호 없음 — 정상 범위";
+  }
+
+  const BADGES = {
+    danger: { label: "과열 주의", cls: "summary-danger" },
+    warn: { label: "부분 과열", cls: "summary-warn" },
+    ok: { label: "정상", cls: "summary-ok" },
+    cool: { label: "과열해소", cls: "summary-cool" },
+  };
+  const badge = BADGES[level];
+  const badgeEl = document.getElementById("summary-badge");
+  badgeEl.textContent = badge.label;
+  badgeEl.className = `summary-badge ${badge.cls}`;
+  document.getElementById("summary-text").textContent = headline;
+
+  // --- 대표 지수 칩 ---
+  const idxEl = document.getElementById("summary-indices");
+  idxEl.innerHTML = SUMMARY_INDEX_CODES.map((code) => {
+    const a = indices.find((x) => x.code === code);
+    if (!a || a.primary_disparity == null) return "";
+    const zm = ZONE_META[a.zone] || { cls: "" };
+    return `<span class="summary-idx ${zm.cls}" title="${escapeHtml(a.name)} ${a.primary_window || 50}일 이격도">
+      ${escapeHtml(a.name)} <strong>${Number(a.primary_disparity).toFixed(1)}</strong></span>`;
+  }).join("");
+
+  // --- 구간별 종목 수(칩 클릭 → 해당 상태 필터 적용) ---
+  const countsEl = document.getElementById("summary-counts");
+  const zoneChip = (zone) => {
+    const zm = ZONE_META[zone];
+    const n = count(stocks, zone);
+    return `<button type="button" class="summary-count ${zm.cls}" data-zone="${zone}">
+      ${zm.label} <strong>${n}</strong></button>`;
+  };
+  countsEl.innerHTML =
+    ["overheat", "caution", "normal", "cooldown"].map(zoneChip).join("") +
+    `<span class="summary-core">핵심종목 과열 ${coreOver}/${core.length}</span>`;
+  Array.from(countsEl.querySelectorAll("button[data-zone]")).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // 기존 상태 필터 버튼을 재사용해 표를 필터링하고 표로 스크롤한다.
+      const target = document.querySelector(
+        `#filter-zone .chip[data-zone="${btn.dataset.zone}"]`
+      );
+      if (target) target.click();
+      const table = document.querySelector(".table-section");
+      if (table) table.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  card.hidden = false;
 }
 
 function renderTable() {
@@ -826,4 +934,13 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// ---------------------------------------------------------------------------
+// PWA: 서비스워커 등록(네트워크 우선 → 오프라인 폴백). 실패해도 앱 동작엔 무관.
+// ---------------------------------------------------------------------------
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
 }
