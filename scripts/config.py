@@ -93,8 +93,13 @@ def _infer_market(yf_ticker: str, country_code: str, source: str):
 
 
 def A(so, grp, name, clabel, ticker, sector, sub, product, exp,
-      *, adr=False, local=None, disp=None, enabled=True, dm=True, note=None):
-    """자산 dict 빌더. clabel=국가 한글 라벨, ticker=화면표기 티커."""
+      *, adr=False, local=None, disp=None, enabled=True, dm=True, note=None,
+      etf=False):
+    """자산 dict 빌더. clabel=국가 한글 라벨, ticker=화면표기 티커.
+
+    etf=True 면 asset_type 이 *_etf 가 되어 개별종목(25일)이 아닌
+    지수와 같은 50일 이격도로 과열을 판정한다.
+    """
     cc = _CC[clabel]
     is_index = ticker.startswith("^")
     if clabel == "한국" and not is_index:
@@ -109,7 +114,12 @@ def A(so, grp, name, clabel, ticker, sector, sub, product, exp,
         source = "yfinance"
 
     market, listing, currency = _infer_market(yf, cc, source)
-    asset_type = f"{cc.lower()}_index" if is_index else f"{market.lower()}_stock"
+    if is_index:
+        asset_type = f"{cc.lower()}_index"
+    elif etf:
+        asset_type = f"{market.lower()}_etf"   # 지수처럼 50일 판정
+    else:
+        asset_type = f"{market.lower()}_stock"
 
     if cc == "KR" and not is_index:
         detail_url = f"https://finance.naver.com/item/main.naver?code={code}"
@@ -235,6 +245,8 @@ ASSETS: List[Dict] = [
     A(205, "03_MEMORY_STORAGE", "Western Digital", "미국", "WDC", "스토리지", "HDD/스토리지", "대용량 데이터 저장·HDD 중심", "2차"),
     A(206, "03_MEMORY_STORAGE", "Seagate", "미국", "STX", "스토리지", "HDD/스토리지", "니어라인 HDD·AI 데이터 저장", "2차"),
     A(207, "03_MEMORY_STORAGE", "파두", "한국", "440110.KQ", "스토리지 컨트롤러", "SSD 컨트롤러", "SSD 컨트롤러·실적 변동성 큼", "고위험"),
+    A(208, "03_MEMORY_STORAGE", "SOL AI반도체TOP2플러스", "한국", "0167A0.KS", "반도체 ETF", "삼성전자+SK하이닉스", "국내 AI 반도체 TOP2 집중 ETF", "핵심",
+      etf=True, note="2026-03-17 상장 → 120일선은 데이터 축적 후 표시"),
 
     # ===== 04 파운드리·제조 =====
     A(300, "04_FOUNDRY_MANUFACTURING", "TSMC", "대만", "TSM", "파운드리", "선단 파운드리", "선단공정 파운드리 절대 핵심", "핵심", adr=True, local="2330.TW"),
@@ -255,6 +267,7 @@ ASSETS: List[Dict] = [
     A(409, "05_EQUIPMENT_TEST", "ASM International", "네덜란드", "ASM.AS", "반도체 장비", "ALD/증착", "원자층증착 ALD 장비", "2차"),
     A(410, "05_EQUIPMENT_TEST", "BE Semiconductor", "네덜란드", "BESI.AS", "후공정 장비", "패키징 장비", "하이브리드 본딩·패키징 장비", "2차"),
     A(411, "05_EQUIPMENT_TEST", "한미반도체", "한국", "042700.KS", "후공정 장비", "HBM TC 본더", "HBM 후공정 장비 핵심", "핵심"),
+    A(412, "05_EQUIPMENT_TEST", "리노공업", "한국", "058470.KQ", "테스트 부품", "테스트 소켓/핀", "AI 칩 테스트 소켓 세계 상위권", "2차"),
 
     # ===== 06 소재·웨이퍼 =====
     A(450, "06_MATERIALS_WAFER", "Shin-Etsu Chemical", "일본", "4063.T", "소재/웨이퍼", "실리콘웨이퍼/소재", "반도체 웨이퍼·화학소재", "핵심"),
@@ -305,9 +318,10 @@ ASSETS: List[Dict] = [
     A(808, "10_POWER_COOLING_GRID", "Monolithic Power Systems", "미국", "MPWR", "전력반도체", "PMIC/전원칩", "AI 서버 전력관리 반도체", "핵심"),
     A(809, "10_POWER_COOLING_GRID", "HD현대일렉트릭", "한국", "267260.KS", "전력기기", "변압기/전력기기", "변압기·전력기기", "2차"),
     A(810, "10_POWER_COOLING_GRID", "LS ELECTRIC", "한국", "010120.KS", "전력기기", "배전/전력인프라", "배전·전력 인프라", "2차"),
-    A(811, "10_POWER_COOLING_GRID", "Auras Technology", "대만", "3324.TWO", "냉각", "액체냉각/콜드플레이트", "AI 서버 액체냉각 부품", "고위험"),
-    A(812, "10_POWER_COOLING_GRID", "Asia Vital Components", "대만", "3017.TW", "냉각", "팬/열관리", "AI 서버 열관리·냉각 솔루션", "고위험"),
-    A(813, "10_POWER_COOLING_GRID", "Bloom Energy", "미국", "BE", "전력공급", "연료전지/분산전원", "AI 데이터센터 전력 공급 테마", "고위험"),
+    A(811, "10_POWER_COOLING_GRID", "효성중공업", "한국", "298040.KS", "전력기기", "초고압변압기", "초고압 변압기·전력기기 (국내 전력기기 3대장)", "2차"),
+    A(812, "10_POWER_COOLING_GRID", "Auras Technology", "대만", "3324.TWO", "냉각", "액체냉각/콜드플레이트", "AI 서버 액체냉각 부품", "고위험"),
+    A(813, "10_POWER_COOLING_GRID", "Asia Vital Components", "대만", "3017.TW", "냉각", "팬/열관리", "AI 서버 열관리·냉각 솔루션", "고위험"),
+    A(814, "10_POWER_COOLING_GRID", "Bloom Energy", "미국", "BE", "전력공급", "연료전지/분산전원", "AI 데이터센터 전력 공급 테마", "고위험"),
 
     # ===== 11 AI 서버·ODM =====
     A(900, "11_AI_SERVER_ODM", "Super Micro Computer", "미국", "SMCI", "AI 서버", "AI 서버/랙", "AI 서버·랙 시스템·고변동성", "고위험"),
@@ -319,6 +333,7 @@ ASSETS: List[Dict] = [
     A(906, "11_AI_SERVER_ODM", "Wistron", "대만", "3231.TW", "ODM", "AI 서버 ODM", "AI 서버·서버 ODM", "2차"),
     A(907, "11_AI_SERVER_ODM", "Inventec", "대만", "2356.TW", "ODM", "서버 ODM", "서버·노트북·AI 서버 ODM", "2차"),
     A(908, "11_AI_SERVER_ODM", "Gigabyte", "대만", "2376.TW", "서버/메인보드", "GPU 서버/메인보드", "AI 서버·메인보드·부품", "2차"),
+    A(909, "11_AI_SERVER_ODM", "Celestica", "미국", "CLS", "EMS/ODM", "AI 서버/네트워킹 ODM", "하이퍼스케일러 AI 서버·스위치 위탁제조", "핵심"),
 
     # ===== 12 클라우드·CAPEX(수요) =====
     A(950, "12_CLOUD_CAPEX", "Microsoft", "미국", "MSFT", "클라우드/CAPEX", "Azure/AI 인프라", "AI 데이터센터 CAPEX 방향성 핵심", "수요"),
