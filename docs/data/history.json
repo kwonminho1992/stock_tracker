@@ -25567,16 +25567,6 @@
     "primary_window": 50,
     "data": [
       {
-        "date": "2025-09-25",
-        "close": 109049.29,
-        "ma25": 113408.7,
-        "ma50": 114215.89,
-        "disparity25": 96.16,
-        "disparity50": 95.48,
-        "primary_disparity": 95.48,
-        "zone": "cooldown"
-      },
-      {
         "date": "2025-09-26",
         "close": 109712.83,
         "ma25": 113427.19,
@@ -29217,10 +29207,10 @@
         "zone": "normal"
       },
       {
-        "date": "2026-09-25",
-        "close": 84053.39,
-        "ma25": 79787.38,
-        "ma50": 75323.33,
+        "date": "2026-09-26",
+        "close": 84054.37,
+        "ma25": 79787.42,
+        "ma50": 75323.35,
         "disparity25": 105.35,
         "disparity50": 111.59,
         "primary_disparity": 111.59,
@@ -29245,16 +29235,6 @@
     "disparity_meaningful": false,
     "primary_window": 50,
     "data": [
-      {
-        "date": "2025-09-25",
-        "close": 3868.33,
-        "ma25": 4388.15,
-        "ma50": 4400.93,
-        "disparity25": 88.15,
-        "disparity50": 87.9,
-        "primary_disparity": 87.9,
-        "zone": "cooldown"
-      },
       {
         "date": "2025-09-26",
         "close": 4035.89,
@@ -32896,13 +32876,13 @@
         "zone": "normal"
       },
       {
-        "date": "2026-09-25",
-        "close": 2692.1,
-        "ma25": 2536.9,
-        "ma50": 2356.94,
-        "disparity25": 106.12,
-        "disparity50": 114.22,
-        "primary_disparity": 114.22,
+        "date": "2026-09-26",
+        "close": 2695.51,
+        "ma25": 2537.04,
+        "ma50": 2357.0,
+        "disparity25": 106.25,
+        "disparity50": 114.36,
+        "primary_disparity": 114.36,
         "zone": "normal"
       }
     ]
@@ -35484,46 +35464,6 @@
     "primary_window": 50,
     "data": [
       {
-        "date": "2025-09-17",
-        "close": 3413.4,
-        "ma25": 3235.52,
-        "ma50": 3215.07,
-        "disparity25": 105.5,
-        "disparity50": 106.17,
-        "primary_disparity": 106.17,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-18",
-        "close": 3461.3,
-        "ma25": 3245.0,
-        "ma50": 3221.62,
-        "disparity25": 106.67,
-        "disparity50": 107.44,
-        "primary_disparity": 107.44,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-19",
-        "close": 3445.24,
-        "ma25": 3253.78,
-        "ma50": 3226.86,
-        "disparity25": 105.88,
-        "disparity50": 106.77,
-        "primary_disparity": 106.77,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-22",
-        "close": 3468.65,
-        "ma25": 3265.44,
-        "ma50": 3232.72,
-        "disparity25": 106.22,
-        "disparity50": 107.3,
-        "primary_disparity": 107.3,
-        "zone": "normal"
-      },
-      {
         "date": "2025-09-23",
         "close": 3486.19,
         "ma25": 3278.82,
@@ -37922,6 +37862,16 @@
         "disparity50": 100.28,
         "primary_disparity": 100.28,
         "zone": "cooldown"
+      },
+      {
+        "date": "2026-09-23",
+        "close": 7080.92,
+        "ma25": 6811.96,
+        "ma50": 6702.48,
+        "disparity25": 103.95,
+        "disparity50": 105.65,
+        "primary_disparity": 105.65,
+        "zone": "normal"
       }
     ]
   },
@@ -37942,46 +37892,6 @@
     "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
-      {
-        "date": "2025-09-17",
-        "close": 466.99,
-        "ma25": 438.22,
-        "ma50": 434.75,
-        "disparity25": 106.57,
-        "disparity50": 107.42,
-        "primary_disparity": 107.42,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-18",
-        "close": 475.34,
-        "ma25": 439.75,
-        "ma50": 435.81,
-        "disparity25": 108.09,
-        "disparity50": 109.07,
-        "primary_disparity": 109.07,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-19",
-        "close": 473.44,
-        "ma25": 441.23,
-        "ma50": 436.71,
-        "disparity25": 107.3,
-        "disparity50": 108.41,
-        "primary_disparity": 108.41,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-22",
-        "close": 478.29,
-        "ma25": 443.19,
-        "ma50": 437.72,
-        "disparity25": 107.92,
-        "disparity50": 109.27,
-        "primary_disparity": 109.27,
-        "zone": "normal"
-      },
       {
         "date": "2025-09-23",
         "close": 481.54,
@@ -40381,6 +40291,16 @@
         "disparity50": 100.16,
         "primary_disparity": 100.16,
         "zone": "cooldown"
+      },
+      {
+        "date": "2026-09-23",
+        "close": 1126.12,
+        "ma25": 1073.37,
+        "ma50": 1057.09,
+        "disparity25": 104.91,
+        "disparity50": 106.53,
+        "primary_disparity": 106.53,
+        "zone": "normal"
       }
     ]
   },
@@ -40401,46 +40321,6 @@
     "disparity_meaningful": true,
     "primary_window": 50,
     "data": [
-      {
-        "date": "2025-09-17",
-        "close": 845.53,
-        "ma25": 810.02,
-        "ma50": 807.57,
-        "disparity25": 104.38,
-        "disparity50": 104.7,
-        "primary_disparity": 104.7,
-        "zone": "cooldown"
-      },
-      {
-        "date": "2025-09-18",
-        "close": 857.11,
-        "ma25": 811.74,
-        "ma50": 808.9,
-        "disparity25": 105.59,
-        "disparity50": 105.96,
-        "primary_disparity": 105.96,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-19",
-        "close": 863.11,
-        "ma25": 813.65,
-        "ma50": 810.21,
-        "disparity25": 106.08,
-        "disparity50": 106.53,
-        "primary_disparity": 106.53,
-        "zone": "normal"
-      },
-      {
-        "date": "2025-09-22",
-        "close": 874.36,
-        "ma25": 816.7,
-        "ma50": 811.69,
-        "disparity25": 107.06,
-        "disparity50": 107.72,
-        "primary_disparity": 107.72,
-        "zone": "normal"
-      },
       {
         "date": "2025-09-23",
         "close": 872.21,
@@ -42840,6 +42720,16 @@
         "disparity50": 102.67,
         "primary_disparity": 102.67,
         "zone": "cooldown"
+      },
+      {
+        "date": "2026-09-23",
+        "close": 844.48,
+        "ma25": 823.84,
+        "ma50": 801.47,
+        "disparity25": 102.5,
+        "disparity50": 105.37,
+        "primary_disparity": 105.37,
+        "zone": "normal"
       }
     ]
   },
@@ -65504,11 +65394,11 @@
       },
       {
         "date": "2026-09-25",
-        "close": 261.93,
+        "close": 261.94,
         "ma25": 234.04,
         "ma50": 220.57,
         "disparity25": 111.92,
-        "disparity50": 118.75,
+        "disparity50": 118.76,
         "primary_disparity": 111.92,
         "zone": "normal"
       }
@@ -119301,7 +119191,7 @@
       },
       {
         "date": "2025-10-17",
-        "close": 1022.53,
+        "close": 1022.54,
         "ma25": 962.47,
         "ma50": 858.22,
         "disparity25": 106.24,
@@ -156808,7 +156698,7 @@
         "date": "2025-10-24",
         "close": 5182.17,
         "ma25": 4908.03,
-        "ma50": 4768.82,
+        "ma50": 4768.83,
         "disparity25": 105.59,
         "disparity50": 108.67,
         "primary_disparity": 105.59,
@@ -157036,7 +156926,7 @@
       },
       {
         "date": "2025-11-28",
-        "close": 5933.65,
+        "close": 5933.66,
         "ma25": 5707.16,
         "ma50": 5298.17,
         "disparity25": 103.97,
@@ -157367,7 +157257,7 @@
       {
         "date": "2026-01-20",
         "close": 6293.45,
-        "ma25": 5953.24,
+        "ma25": 5953.23,
         "ma50": 5919.31,
         "disparity25": 105.71,
         "disparity50": 106.32,
@@ -172583,9 +172473,9 @@
         "close": 48.28,
         "ma25": 48.99,
         "ma50": 47.1,
-        "disparity25": 98.56,
+        "disparity25": 98.57,
         "disparity50": 102.51,
-        "primary_disparity": 98.56,
+        "primary_disparity": 98.57,
         "zone": "cooldown"
       },
       {
@@ -176950,7 +176840,7 @@
         "date": "2025-11-27",
         "close": 5714.61,
         "ma25": 6207.52,
-        "ma50": 5425.12,
+        "ma50": 5425.11,
         "disparity25": 92.06,
         "disparity50": 105.34,
         "primary_disparity": 92.06,
