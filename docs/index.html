@@ -3,222 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>시장 · 종목 이격도 트래커</title>
+  <title>AI 투자 레이더 · Stock Tracker</title>
   <meta name="theme-color" content="#0f141b" />
+  <meta name="description" content="AI 밸류체인의 주가 강약, 추세 변화, 관심종목과 투자 판단 근거를 한눈에 확인하세요." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <!-- iOS 홈화면 추가 지원 -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="이격도" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="apple-mobile-web-app-title" content="AI 레이더" />
+  <link rel="stylesheet" href="styles.css?v=radar2" />
 </head>
 <body>
+  <a class="skip-link" href="#main">본문으로 이동</a>
   <header class="site-header">
-    <h1>AI 병목 밸류체인 이격도 대시보드</h1>
-    <p class="subtitle">연산·메모리·제조·장비·기판·부품·네트워크·전력·서버까지 AI 병목 밸류체인을 국가별로 한눈에. 개별종목은 25일, 지수·환율은 50일 이동평균 이격도로 단기 과열도를 점검합니다.</p>
-    <p class="meta">
-      <span id="updated-at">불러오는 중…</span>
-      <span id="run-type" class="badge"></span>
-      <button id="refresh-btn" class="refresh-btn" type="button" title="최신 데이터 다시 불러오기">
-        <span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">새로고침</span>
-      </button>
-      <span id="checked-at" class="checked-at"></span>
-    </p>
+    <div class="header-inner">
+      <a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">AI</span><span>Stock Tracker<small>AI 투자 레이더</small></span></a>
+      <nav aria-label="주요 메뉴"><a href="#overview">시장 개요</a><a href="#explorer">종목 탐색</a><a href="#research">판단 근거</a></nav>
+      <button id="refresh-btn" class="button secondary" type="button"><span aria-hidden="true">↻</span> 데이터 확인</button>
+    </div>
   </header>
-
-  <main>
-    <section id="summary-card" class="summary-card" aria-label="종합 판정 요약" hidden>
-      <div class="summary-headline">
-        <span id="summary-badge" class="summary-badge"></span>
-        <span id="summary-text" class="summary-text"></span>
-      </div>
-      <div id="summary-indices" class="summary-indices"></div>
-      <div id="summary-counts" class="summary-counts"></div>
-      <p class="summary-note">
-        판정 이격도(종목 25일·지수/ETF 50일) 고정 기준의 참고 신호입니다. 매매 신호가 아닙니다.
-      </p>
+  <main id="main">
+    <section id="overview" class="overview">
+      <div class="page-heading"><div><p class="eyebrow">AI VALUE CHAIN</p><h1>변화를 먼저, 근거를 함께.</h1><p class="subtitle">AI 분야의 강약과 추세를 확인하고, 살펴볼 종목을 좁혀보세요.</p></div><div class="update-info"><span id="updated-at">데이터를 불러오는 중…</span><span id="run-type" class="badge"></span><small id="checked-at"></small></div></div>
+      <div id="data-status" class="data-status" role="status"></div>
+      <div id="load-error" class="load-error" role="alert" hidden></div>
+      <div id="overview-stats" class="overview-stats" aria-label="시장 점검 지표"></div>
+      <div class="section-heading"><h2>지금 확인할 3가지</h2><span>계산 가능한 변화와 관찰 근거</span></div>
+      <div id="briefing" class="briefing" aria-live="polite"></div>
+      <div id="market-strip" class="market-strip" aria-label="대표 시장지수와 매크로"></div>
     </section>
 
-    <section class="legend" aria-label="구간 범례">
-      <span class="legend-item zone-overheat">과열 (기준 이격도 ≥130)</span>
-      <span class="legend-item zone-caution">경계 (120–130)</span>
-      <span class="legend-item zone-normal">정상 (105–120)</span>
-      <span class="legend-item zone-cooldown">과열해소 (≤105)</span>
-    </section>
-    <p class="interpretation-note">
-      과열 판정 기준: 개별종목은 25일, 지수는 50일 이격도입니다.
-      고정 기준선은 빠른 비교용 참고선이며 종목의 변동성·추세에 따라 해석이 달라질 수 있습니다.
-    </p>
-
-    <section class="macro-section macro-collapsed" aria-label="매크로 참고 지표">
-      <button
-        id="macro-toggle"
-        class="macro-toggle"
-        type="button"
-        aria-expanded="false"
-        aria-controls="macro-strip"
-      >
-        <span class="macro-title">매크로 참고</span>
-        <span id="macro-summary" class="macro-summary">불러오는 중…</span>
-        <span id="macro-toggle-text" class="macro-toggle-text">펼치기</span>
-      </button>
-      <div id="macro-strip" class="macro-strip" hidden>
-        <span class="macro-chip">불러오는 중…</span>
-      </div>
+    <section class="chain-section" aria-labelledby="chain-title">
+      <div class="section-heading"><div><h2 id="chain-title">AI 밸류체인 강약</h2><p>분야를 선택하면 관련 종목을 볼 수 있습니다.</p></div><span class="metric-key">20거래일 성과 · 시장 대비 · 50일선 위 비중</span></div>
+      <div id="chain-grid" class="chain-grid" role="group" aria-label="밸류체인 선택"></div>
+      <p id="chain-basis" class="method-note"></p>
     </section>
 
-    <section class="card table-section">
-      <div class="section-controls">
-        <h2>AI 병목 밸류체인 이격도</h2>
-        <label class="sort-toggle">
-          <input type="checkbox" id="sort-by-disparity" />
-          그룹 안에서 판정 이격도 높은 순
-        </label>
+    <section id="explorer" class="explorer-section" aria-labelledby="explorer-title">
+      <div class="section-heading"><div><h2 id="explorer-title">종목 탐색</h2><p id="result-count">불러오는 중…</p></div><label class="search-field"><span class="sr-only">종목명 또는 티커 검색</span><input type="search" id="search-input" placeholder="종목명 또는 티커 검색" autocomplete="off" /></label></div>
+      <div class="view-tabs" id="view-tabs" role="group" aria-label="관찰 목록">
+        <button type="button" data-view="ALL" class="active" aria-pressed="true">전체</button>
+        <button type="button" data-view="WATCH" aria-pressed="false">☆ 관심종목 <span id="watch-count">0</span></button>
+        <button type="button" data-view="CHANGES" aria-pressed="false">새 변화</button>
+        <button type="button" data-view="pullback" aria-pressed="false">상승 추세 속 조정</button>
+        <button type="button" data-view="up" aria-pressed="false">상승 추세</button>
+        <button type="button" data-view="weak" aria-pressed="false">추세 약화</button>
+        <button type="button" data-view="HOT" aria-pressed="false">높은 상승 이격</button>
       </div>
-      <div class="filter-bar">
-        <div class="filter-group" id="filter-country" role="group" aria-label="국가 필터">
-          <span class="filter-label">국가</span>
-          <button type="button" class="chip active" data-country="ALL">전체</button>
-          <button type="button" class="chip" data-country="KR">한국</button>
-          <button type="button" class="chip" data-country="US">미국</button>
-          <button type="button" class="chip" data-country="JP">일본</button>
-          <button type="button" class="chip" data-country="TW">대만</button>
-          <button type="button" class="chip" data-country="EU">유럽</button>
-        </div>
-        <div class="filter-group" id="filter-zone" role="group" aria-label="과열 상태 필터">
-          <span class="filter-label">상태</span>
-          <button type="button" class="chip active" data-zone="ALL">전체</button>
-          <button type="button" class="chip" data-zone="overheat">과열</button>
-          <button type="button" class="chip" data-zone="caution">경계</button>
-          <button type="button" class="chip" data-zone="normal">정상</button>
-          <button type="button" class="chip" data-zone="cooldown">과열해소</button>
-        </div>
-        <label class="filter-select">AI 병목그룹
-          <select id="filter-group-sel">
-            <option value="ALL">전체</option>
-            <option value="00_INDEX">시장지수</option>
-            <option value="01_COMPUTE_ASIC">AI 연산·ASIC</option>
-            <option value="02_EDA_IP">EDA·IP</option>
-            <option value="03_MEMORY_STORAGE">메모리·스토리지</option>
-            <option value="04_FOUNDRY_MANUFACTURING">파운드리·제조</option>
-            <option value="05_EQUIPMENT_TEST">장비·테스트</option>
-            <option value="06_MATERIALS_WAFER">소재·웨이퍼</option>
-            <option value="07_PACKAGING_SUBSTRATE_PCB">패키징·기판·PCB</option>
-            <option value="08_MLCC_PASSIVE_COMPONENT">MLCC·수동부품</option>
-            <option value="09_NETWORK_OPTICAL">네트워크·광</option>
-            <option value="10_POWER_COOLING_GRID">전력·냉각·그리드</option>
-            <option value="11_AI_SERVER_ODM">AI 서버·ODM</option>
-            <option value="12_CLOUD_CAPEX">클라우드·CAPEX</option>
-          </select>
-        </label>
-        <label class="filter-select">노출도
-          <select id="filter-exposure">
-            <option value="ALL">전체</option>
-            <option value="CORE">핵심</option>
-            <option value="SECONDARY">2차</option>
-            <option value="SUPPORT">보조</option>
-            <option value="DEMAND">수요(클라우드)</option>
-            <option value="BENCHMARK">벤치마크</option>
-            <option value="HIGH_RISK">고위험</option>
-          </select>
-        </label>
+      <div class="filters">
+        <label>분야<select id="filter-group"><option value="ALL">전체 밸류체인</option><option value="00_INDEX">시장지수</option></select></label>
+        <label>국가<select id="filter-country"><option value="ALL">전체 국가</option><option value="KR">한국</option><option value="US">미국</option><option value="JP">일본</option><option value="TW">대만</option><option value="EU">유럽</option><option value="HK">홍콩</option></select></label>
+        <label>역할<select id="filter-exposure"><option value="ALL">전체 역할</option><option value="CORE">핵심</option><option value="DEMAND">수요</option><option value="SECONDARY">2차</option><option value="SUPPORT">보조</option><option value="HIGH_RISK">고위험</option><option value="BENCHMARK">벤치마크</option></select></label>
+        <label>정렬<select id="sort-select"><option value="relative20">시장 대비 강한 순</option><option value="return20">20일 성과 높은 순</option><option value="distance25">25일 이격 높은 순</option><option value="name">종목명</option></select></label>
+        <button id="reset-filters" class="button ghost" type="button">필터 초기화</button>
       </div>
-      <div class="table-wrap">
-        <table id="latest-table">
-          <thead>
-            <tr>
-              <th class="col-country">국가</th>
-              <th class="col-name">종목</th>
-              <th class="col-cat">분류</th>
-              <th class="col-product">제품군/분야</th>
-              <th class="num col-price">현재가</th>
-              <th class="num col-chg">등락률</th>
-              <th class="num col-d" title="25일 이동평균 대비 이격도(%). 개별종목 판정 기준">25일</th>
-              <th class="num col-d" title="50일 이동평균 대비 이격도(%). 지수 판정 기준">50일</th>
-              <th class="num col-d col-d120" title="120일 이동평균 대비 이격도(%). 중기 추세 참고">120일</th>
-              <th class="col-zone" title="판정 이격도 기준 과열 구간">과열</th>
-              <th class="col-fresh" title="데이터 기준일과 품질 경고">최신성</th>
-            </tr>
-          </thead>
-          <tbody id="latest-tbody">
-            <tr><td colspan="11" class="loading">데이터 불러오는 중…</td></tr>
-          </tbody>
-        </table>
+      <div class="explorer-layout">
+        <div class="table-area"><div class="table-wrap"><table id="asset-table"><thead><tr><th class="watch-column"><span class="sr-only">관심종목</span>☆</th><th>종목 · AI 역할</th><th class="num">20일 성과<small>시장 대비</small></th><th>추세</th><th class="num">평균선과 거리<small>종목 25일 · 지수/ETF 50일</small></th><th>최근 변화 · 기준일</th></tr></thead><tbody id="asset-tbody"><tr><td colspan="6" class="empty-state">데이터를 불러오는 중…</td></tr></tbody></table></div><p class="method-note">성과는 현지 통화의 제공처 가격 기준이며, 해외 수정주가는 분할·배당 보정을 포함할 수 있습니다. 원화 환산·별도 현금배당 총수익률과 다릅니다. 시장 대비는 같은 시작일·종료일의 상장시장 지수와 비교한 차이(%p)입니다. ADR은 상장시장 기준으로 비교합니다.</p></div>
+        <aside id="detail-panel" class="detail-panel" aria-labelledby="detail-name" aria-live="polite">
+          <div id="detail-content"></div>
+          <div class="chart-controls"><span>가격·추세</span><div id="chart-periods" role="group" aria-label="차트 기간"><button data-period="1M" type="button" aria-pressed="false">1개월</button><button data-period="3M" type="button" class="active" aria-pressed="true">3개월</button><button data-period="1Y" type="button" aria-pressed="false">1년</button></div></div>
+          <div class="chart-wrap"><canvas id="price-chart" role="img" aria-label="선택한 종목의 가격과 이동평균 추이"></canvas><p id="chart-fallback" hidden>차트를 표시할 수 없습니다. 위의 수치와 원문 시세를 확인하세요.</p></div>
+          <div id="detail-research"></div>
+        </aside>
       </div>
     </section>
 
-    <section class="card chart-section">
-      <div class="section-controls">
-        <h2>판정 이격도 · 가격 추이 (최근 1년)</h2>
-        <select id="asset-select" aria-label="자산 선택"></select>
-      </div>
-      <p id="chart-caption" class="chart-caption"></p>
-      <div class="chart-wrap">
-        <canvas id="disparity-chart"></canvas>
-      </div>
-      <p class="chart-note">왼쪽 축: 판정 이격도(개별종목 25일, 지수·ETF 50일) · 오른쪽 축: 가격 · 점선: 130(과열) · 120(경계) · 105(과열해소) 기준선</p>
+    <section id="research" class="research-section" aria-labelledby="research-title">
+      <div class="section-heading"><div><h2 id="research-title">가격 다음에 확인할 판단 근거</h2><p>주가 강세와 실제 AI 수요·공급 병목은 각각 확인해야 합니다.</p></div><span class="badge">공시·기업 IR 원문</span></div>
+      <div id="research-grid" class="research-grid"></div>
+      <details class="methodology"><summary>지표 해석과 비교 기준</summary><div><p><strong>추세와 이격은 별도입니다.</strong> 추세는 50·120일선 대비 가격 위치와 최근 5거래일의 50일선 방향으로 구분합니다. 단기 이격이 낮아졌다는 사실만으로 저평가나 재진입 기회를 뜻하지 않습니다.</p><p><strong>분야 성과는 추적 종목의 중앙값입니다.</strong> 전체 산업의 수익률이나 투자 가능한 지수가 아닙니다. 결측·오래된 값·검증 경고가 있는 종목은 집계에서 제외하며, 비교에 사용한 종목 수를 함께 표시합니다.</p><p><strong>시장 대비 성과는 날짜를 맞춰 비교합니다.</strong> 한국은 코스피, 미국 상장은 S&amp;P500, 일본은 닛케이225, 대만은 가권지수를 사용합니다. 유럽·홍콩 등 비교 지수가 없는 경우는 —로 표시합니다. 국가별 거래일과 통화가 달라 원화 투자 수익률과 다를 수 있습니다.</p><p><strong>최근 변화는 최신 거래일과 직전 거래일의 차이입니다.</strong> 장중 값은 바뀔 수 있고, 프리장·애프터마켓 가격은 이격도에 반영하지 않습니다. 고정 이격도 120·130은 참고 기준이며 매매 신호로 사용하지 않습니다.</p><p><strong>산업·실적·가치 평가는 원문 확인이 필요합니다.</strong> CAPEX, 리드타임, 수주와 실적 수치를 확보하지 않은 상태에서 가격만으로 실제 병목 강화나 저평가를 판정하지 않습니다.</p></div></details>
     </section>
 
-    <section class="card refs-section" aria-label="참고 자료">
-      <div class="section-controls">
-        <h2>부록 · 참고 자료</h2>
-      </div>
-      <div class="refs-grid">
-        <a class="ref-card" href="https://semianalysis.com/" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">SemiAnalysis</span><span class="ref-tag">리서치 · EN · 일부 유료</span></div>
-          <p class="ref-desc">Dylan Patel의 반도체·AI 인프라 전문 리서치. 데이터센터 CAPEX, GPU 공급망,
-            HBM·패키징(CoWoS) 병목을 가장 깊게 다루는 곳 — 이 대시보드의 밸류체인 관점과 직결.</p>
-        </a>
-        <a class="ref-card" href="https://www.dramexchange.com/" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">DRAMeXchange</span><span class="ref-tag">시세 · EN · 일부 유료</span></div>
-          <p class="ref-desc">TrendForce 운영, DRAM·낸드 현물/고정거래가 시세의 원천.
-            메모리 판가 방향은 SK하이닉스·삼성전자·마이크론 실적 사이클의 선행 지표.</p>
-        </a>
-        <a class="ref-card" href="https://kr.tradingview.com/symbols/SGX-ISDRAM/?timeframe=1M" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">SGX DRAM 지수 (TradingView)</span><span class="ref-tag">차트 · 무료</span></div>
-          <p class="ref-desc">iSelect 글로벌 DRAM 반도체 지수 — 글로벌 메모리 기업 주가를 묶은 지수.
-            개별 종목이 아닌 메모리 업종 전체의 사이클 위치를 한 차트로 확인.</p>
-        </a>
-        <a class="ref-card" href="https://blog.naver.com/ranto28" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">메르 블로그</span><span class="ref-tag">블로그 · KR</span></div>
-          <p class="ref-desc">지정학·공급망·반도체·에너지 이슈를 서사로 풀어내는 국내 대표 투자 블로그.
-            뉴스 조각들을 산업 흐름으로 연결하는 배경지식용.</p>
-        </a>
-        <a class="ref-card" href="https://blog.naver.com/egzion" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">이그전 (이은택의 그림 전략)</span><span class="ref-tag">블로그 · KR</span></div>
-          <p class="ref-desc">이은택(KB증권 주식전략)의 차트·그림 중심 시장 전략.
-            사이클 위치·업종 로테이션 판단 등 이 대시보드의 과열 판정을 보완하는 톱다운 시각.</p>
-        </a>
-        <a class="ref-card" href="https://www.hormuztracker.com/ko" target="_blank" rel="noopener">
-          <div class="ref-top"><span class="ref-name">Hormuz Tracker</span><span class="ref-tag">대시보드 · KR지원 · 무료</span></div>
-          <p class="ref-desc">호르무즈 해협(세계 해상 원유 약 20% 통과) 선박 통항·운임·보험료 실시간 추적.
-            중동 리스크→유가→인플레·금리로 이어지는 매크로 충격의 조기경보.</p>
-        </a>
-      </div>
-      <p class="refs-note">외부 사이트는 본 대시보드와 무관하며, 내용의 정확성을 보증하지 않습니다.</p>
-    </section>
+    <section class="macro-section" aria-labelledby="macro-title"><details id="macro-details"><summary><span id="macro-title">매크로 상세</span><span id="macro-summary"></span></summary><div id="macro-grid" class="macro-grid"></div></details></section>
   </main>
-
-  <footer class="site-footer">
-    <p class="sources">
-      데이터 출처: 국내(KRX) 지수·종목 = <strong>FinanceDataReader</strong> ·
-      해외 지수·종목 = <strong>Yahoo Finance (yfinance)</strong>.
-      GitHub Actions에서 평일 1시간마다 자동 갱신됩니다.
-      <strong>장중/스케줄 갱신</strong> 시에는 국내 개별종목은 KRX 히스토리에 Yahoo Finance 최신가를 보강하고,
-      그 외 자산은 Yahoo Finance 지연시세로 계산합니다.
-      미국 상장 종목(미국 개별주·TSMC ADR)은 해당 시간대일 때 <strong>프리장/애프터마켓</strong> 시세를
-      가격 옆에 함께 표시하며, 이 값은 <strong>이격도 계산에는 반영되지 않습니다</strong>.
-    </p>
-    <p>
-      본 페이지는 정보 제공용이며 투자 권유가 아닙니다.
-      무료 데이터 소스는 지연·결측·오류가 있을 수 있으며,
-      모든 투자 판단과 책임은 이용자 본인에게 있습니다.
-    </p>
-  </footer>
-
+  <footer class="site-footer"><p>데이터: 국내 KRX / FinanceDataReader · 해외 Yahoo Finance · 매크로 FRED 및 원문 출처. GitHub Actions에서 평일 정기 수집합니다. 무료 시세는 지연·결측이 있을 수 있습니다.</p><p>본 화면은 정보 제공용이며 투자 권유가 아닙니다. 수집 시각과 각 지표의 관측 기준일을 함께 확인하세요.</p></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="app.js"></script>
+  <script src="insights.js?v=radar2"></script>
+  <script src="app.js?v=radar2"></script>
 </body>
 </html>

@@ -27,6 +27,7 @@ from external_macro_source import fetch_tradingeconomics
 from fred_source import available as fred_available
 from fred_source import fetch_latest as fetch_fred_latest
 from fred_source import load_dotenv
+from fred_source import normalize_frequency
 from indicators import (
     add_disparities,
     add_moving_averages,
@@ -57,6 +58,54 @@ COUNTRY_CODES = {
     "유럽": "EU",
     "홍콩": "HK",
 }
+
+# 관측기간 시작일 기준의 보수적인 허용 지연(달력 일수).
+# 월간 120일은 일반적인 발표 지연 및 월초 날짜 표기를 허용한다.
+# 분기 240일/연간 550일은 더 느린 발표주기를 고려한다.
+# 이는 공급기관의 SLA나 다음 발표일 예측이 아닌 화면상의 오래됨 경고 기준이다.
+MACRO_STALE_AFTER_DAYS = {
+    "daily": 14, "weekly": 35, "biweekly": 60,
+    "monthly": 120, "quarterly": 240, "semiannual": 365, "annual": 550,
+}
+
+
+def macro_freshness(
+    asof: Optional[str], frequency: Optional[str], today: Optional[date] = None,
+    discontinued: bool = False,
+) -> Dict:
+    """관측일과 발표 빈도로 최신성을 판단. 조회 성공과 최신 관측치를 구분한다."""
+    today = today or now_kst().date()
+    frequency = normalize_frequency(frequency)
+    threshold = MACRO_STALE_AFTER_DAYS.get(frequency)
+    age_days = None
+    warnings = []
+    try:
+        observed = date.fromisoformat(str(asof))
+        age_days = (today - observed).days
+    except (ValueError, TypeError):
+        warnings.append("관측일을 확인할 수 없어 최신성 검증 불가")
+    if age_days is not None and age_days < 0:
+        warnings.append("미래 관측일로 최신성 검증 불가")
+    if threshold is None:
+        warnings.append("발표 빈도를 확인할 수 없어 최신성 검증 불가")
+    unknown = age_days is None or age_days < 0 or threshold is None
+    stale = not unknown and age_days > threshold
+    if stale:
+        warnings.append(
+            f"오래된 관측치: {asof} · {age_days}일 경과 "
+            f"(경고 기준 {threshold}일). 발표 지연 또는 계열 갱신 중단 확인 필요"
+        )
+    if discontinued:
+        warnings.append("공급기관이 중단한 계열 · 현재 투자환경 해석에서 제외")
+    return {
+        "macro_frequency": frequency,
+        "macro_age_days": age_days,
+        "macro_stale_after_days": threshold,
+        "macro_freshness": "unknown" if unknown else "stale" if stale or discontinued else "fresh",
+        "macro_discontinued": bool(discontinued),
+        "is_stale": bool(unknown or stale or discontinued),
+        "warning": " / ".join(warnings) or None,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -157,6 +206,15 @@ def _macro_link_record(item: Dict, source: str, reason: Optional[str] = None) ->
         "display_ticker": item.get("series_id") or item.get("code") or "",
         "detail_url": item.get("url"),
         "link_only": True,
+        "date": None,
+        "close": None,
+        "macro_frequency": normalize_frequency(item.get("frequency")),
+        "macro_age_days": None,
+        "macro_stale_after_days": MACRO_STALE_AFTER_DAYS.get(normalize_frequency(item.get("frequency"))),
+        "macro_freshness": "unavailable",
+        "macro_date_type": None,
+        "is_stale": None,
+        "warning": f"수치 미수집 · {reason or '외부 링크에서 직접 확인 필요'}",
     }
 
 
@@ -172,6 +230,15 @@ def _fred_macro_record(item: Dict) -> Dict:
 
     country_label = item.get("country_label")
     country = _country_code(country_label)
+    frequency = obs.get("frequency") or item.get("frequency")
+    freshness = macro_freshness(
+        obs.get("asof"), frequency,
+        discontinued=obs.get("is_discontinued", False),
+    )
+    projection = bool(obs.get("is_projection") or item.get("is_projection"))
+    if projection:
+        projection_warning = "IMF 연간 전망 계열 · 당해·미래연도 수치는 전망치"
+        freshness["warning"] = " / ".join(filter(None, [freshness["warning"], projection_warning]))
     return {
         "name": item["name"],
         "code": item["series_id"],
@@ -205,19 +272,35 @@ def _fred_macro_record(item: Dict) -> Dict:
         "change_pct": None,
         "zone": None,
         "zone_label": None,
-        "is_stale": False,
         "is_suspicious": False,
-        "warning": None,
+        "macro_date_type": "observation",
+        "macro_frequency_source": "FRED metadata" if obs.get("frequency") else "configured",
+        "macro_source_frequency": obs.get("source_frequency"),
+        "macro_source_updated_at": obs.get("source_updated_at"),
+        "macro_series_end": obs.get("series_end"),
+        "macro_is_projection": projection,
+        **freshness,
     }
 
 
 def _external_macro_record(item: Dict) -> Dict:
-    obs = fetch_tradingeconomics(item)
+    try:
+        obs = fetch_tradingeconomics(item)
+    except Exception:
+        return _macro_link_record(item, item.get("note") or "Link", "조회 실패")
     if obs is None:
         return _macro_link_record(item, item.get("note") or "Link", "조회 실패")
 
     country_label = item.get("country_label")
     country = _country_code(country_label)
+    freshness = macro_freshness(obs.get("asof"), item.get("frequency"))
+    # HTML의 LastUpdate는 관측기간이 아니라 페이지 갱신일이다.
+    # 값을 읽었어도 관측일을 검증하지 못했음을 표시한다.
+    freshness["macro_freshness"] = "unknown"
+    freshness["is_stale"] = True
+    freshness["warning"] = " / ".join(filter(None, [
+        freshness["warning"], "관측기간 미확인 · 표시 날짜는 출처 페이지 갱신일",
+    ]))
     return {
         "name": item["name"],
         "code": item.get("code") or item["name"],
@@ -250,9 +333,10 @@ def _external_macro_record(item: Dict) -> Dict:
         "change_pct": None,
         "zone": None,
         "zone_label": None,
-        "is_stale": False,
         "is_suspicious": False,
-        "warning": None,
+        "macro_date_type": "source_update",
+        "macro_frequency_source": "configured",
+        **freshness,
     }
 
 

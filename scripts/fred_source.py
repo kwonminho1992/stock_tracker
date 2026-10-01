@@ -15,7 +15,59 @@ from pathlib import Path
 from typing import Dict, Optional
 
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
+FRED_SERIES_BASE = "https://api.stlouisfed.org/fred/series"
 _ROOT = Path(__file__).resolve().parent.parent
+
+
+def normalize_frequency(value: Optional[str]) -> Optional[str]:
+    """FRED frequency_short 또는 전체 빈도명을 공통 표기로 변환."""
+    aliases = {
+        "d": "daily", "daily": "daily",
+        "w": "weekly", "weekly": "weekly",
+        "bw": "biweekly", "biweekly": "biweekly",
+        "m": "monthly", "monthly": "monthly",
+        "q": "quarterly", "quarterly": "quarterly",
+        "sa": "semiannual", "semiannual": "semiannual",
+        "a": "annual", "annual": "annual",
+    }
+    return aliases.get(str(value or "").strip().lower())
+
+
+def _fetch_metadata(series_id: str, key: str) -> Dict:
+    """공식 series metadata 조회. 실패해도 이미 받은 관측치를 보존한다.
+
+    API 문서: https://fred.stlouisfed.org/docs/api/fred/series.html
+    observation_end/last_updated는 관측일 및 수집일과 다른 의미이므로
+    별도 필드로 제공하며, 마지막 API 호출 시점으로 최신성을 판단하지 않는다.
+    """
+    params = urllib.parse.urlencode({
+        "series_id": series_id, "api_key": key, "file_type": "json",
+    })
+    try:
+        req = urllib.request.Request(
+            f"{FRED_SERIES_BASE}?{params}",
+            headers={"User-Agent": "market-disparity-tracker"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            payload = json.loads(response.read())
+        series = payload.get("seriess", [])
+        if not series:
+            return {}
+        metadata = series[0]
+        notes = str(metadata.get("notes") or "").lower()
+        description = f"{metadata.get('title', '')} {notes}".lower()
+        source_frequency = metadata.get("frequency_short") or metadata.get("frequency")
+        return {
+            "frequency": normalize_frequency(source_frequency),
+            "source_frequency": metadata.get("frequency"),
+            "source_updated_at": metadata.get("last_updated"),
+            "series_end": metadata.get("observation_end"),
+            "is_discontinued": "discontinued" in description,
+            "is_projection": "current and future years are projections" in notes,
+        }
+    except Exception:
+        # 실패 URL/예외를 출력하면 query의 API 키가 노출될 수 있다.
+        return {}
 
 
 def load_dotenv() -> None:
@@ -51,7 +103,8 @@ def available() -> bool:
 def fetch_latest(series_id: str, yoy: bool = False) -> Optional[Dict]:
     """FRED 시계열의 최신 관측치를 반환.
 
-    반환: {"value": float, "asof": "YYYY-MM-DD", "yoy_pct": float|None} 또는 None(실패).
+    반환: {"value": float, "asof": "YYYY-MM-DD", "yoy_pct": float|None,
+           "frequency": str|None, "source_updated_at": str|None, ...} 또는 None(실패).
       - yoy=True 면 12개월 전 대비 변화율(%)도 계산(월간 시계열 가정).
     """
     key = api_key()
@@ -86,6 +139,9 @@ def fetch_latest(series_id: str, yoy: bool = False) -> Optional[Dict]:
                     yoy_pct = round((value / year_ago - 1.0) * 100.0, 2)
             except (ValueError, TypeError):
                 yoy_pct = None
-        return {"value": round(value, 4), "asof": asof, "yoy_pct": yoy_pct}
+        return {
+            "value": round(value, 4), "asof": asof, "yoy_pct": yoy_pct,
+            **_fetch_metadata(series_id, key),
+        }
     except Exception:
         return None

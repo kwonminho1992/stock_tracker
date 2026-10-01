@@ -5,11 +5,12 @@
  *  - 오프라인일 때만 캐시로 폴백한다(화면의 '업데이트: N시간 전' 표기가
  *    데이터가 오래됐음을 그대로 드러낸다).
  */
-const CACHE = "disparity-v1";
+const CACHE = "ai-investment-radar-v2";
 const SHELL = [
   "./",
   "index.html",
   "app.js",
+  "insights.js",
   "styles.css",
   "manifest.webmanifest",
 ];

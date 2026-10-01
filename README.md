@@ -1,343 +1,184 @@
-# market-disparity-tracker
+# AI 투자 레이더 · Stock Tracker
 
-시장/종목의 **이격도(disparity)** 를 자동 계산해, 단기 과열도를 한눈에 점검하기 위한
-개인용 대시보드입니다.
+AI 밸류체인의 **주가 강약과 추세 변화**를 먼저 살펴보고, 관심종목을 좁힌 뒤
+공식 IR·공시에서 산업 수요와 실적 근거를 확인하는 개인용 대시보드입니다.
 
-> ⚠️ **면책**: 이 프로젝트는 **정보 제공용**이며 매수/매도 추천이나 투자 권유가 아닙니다.
-> 무료 데이터 소스(pykrx · yfinance)는 지연·결측·오류가 있을 수 있고, 모든 투자 판단과
-> 책임은 이용자 본인에게 있습니다.
+[대시보드 열기](https://kwonminho1992.github.io/stock_tracker/)
 
----
+## 화면에서 확인하는 순서
 
-## 1. 프로젝트 목적
+1. **지금 확인할 3가지**: 20거래일 시장 대비 성과가 강한 분야, 최신 거래일의
+   평균선 돌파·이탈, 높은 상승 이격을 요약합니다. 관련 종목 목록으로 바로 이동합니다.
+2. **12개 AI 분야 비교**: 분야별 20거래일 수익률 중앙값, 시장 대비 성과 중앙값,
+   50일선 위 종목 비중과 계산에 사용한 종목 수를 함께 확인합니다.
+3. **종목 탐색·관심종목·상세 패널**: 이름·티커 검색과 분야·국가·AI 노출 필터,
+   새 변화·추세·이격별 목록으로 종목을 좁힙니다. 별표로 등록한 관심종목은 해당
+   브라우저의 로컬 저장소에 보관됩니다. 종목을 선택하면 가격·50일선·120일선 차트,
+   비교 기간, 추세, 평균선과 거리, 시세 출처가 표시됩니다.
+4. **투자 판단 근거**: 수요(CAPEX) → 공급능력 → 수주·실적 → 가치·위험 순서로
+   확인할 항목과 공식 IR·공시 링크를 제공합니다. 각 종목 상세에도 해당 분야의
+   공식 자료와 확인 항목이 연결됩니다.
 
-단순히 차트를 보는 도구가 아니라, **리스크 관리 보조 도구**입니다. 다음 질문에 답하는 것을
-목표로 합니다.
+분야는 AI 연산·ASIC, EDA·IP, 메모리·스토리지, 파운드리·제조, 장비·테스트,
+소재·웨이퍼, 패키징·기판·PCB, MLCC·수동부품, 네트워크·광, 전력·냉각·그리드,
+AI 서버·ODM, 클라우드·CAPEX입니다. 실제 자산과 분류는
+[scripts/config.py](scripts/config.py)의 `ASSETS`와 `AI_GROUP_ORDER`에서 관리합니다.
 
-- 지금 시장 전체가 과열인가?
-- 코스피와 반도체 주도주의 과열이 동시에 발생했는가?
-- SK하이닉스 같은 주도주가 시장보다 더 과열됐는가?
-- 신규매수를 멈춰야 할 구간인가?
-- 레버리지 노출을 줄여야 할 구간인가?
-- 조정 후 재진입을 검토할 수 있는 구간인가?
+## 지표를 읽는 방법
 
-따라서 "대충 맞는 값"을 예쁘게 보여주기보다, **값이 의심스러우면 경고(warning / suspicious /
-stale / error)를 명확히 드러내는 것**을 최우선 설계 원칙으로 둡니다.
+### 추세와 판정 이격은 별도입니다
 
----
+**추세**는 가격의 50·120일 이동평균 대비 위치와 최근 5거래일 동안의 50일선
+방향을 함께 사용합니다.
 
-## 2. 이격도 산식
+| 화면 표시 | 조건 |
+| --- | --- |
+| 상승 추세 | 가격이 50·120일선 이상이고 50일선 상승 |
+| 추세 속 조정 | 가격이 50일선 아래·120일선 이상이고 50일선 상승 |
+| 추세 약화 | 가격이 50·120일선 아래이고 50일선 하락 |
+| 회복 확인 중 | 위 조건에 해당하지 않는 유효 데이터 |
+| 판정 보류 | 평균선·기울기 자료 부족 또는 데이터 품질 확인 필요 |
 
-이격도는 현재가가 이동평균에서 얼마나 떨어져 있는지를 백분율로 나타냅니다.
+**평균선과 거리**는 `(가격 / 이동평균 - 1) × 100`입니다. 이격도 114는
+화면에서 평균선보다 `+14%`로 읽습니다. 판정 평균은 개별 주식 25일,
+지수·ETF 50일이 기본이며 자산의 `primary_window` 지정값을 우선합니다.
+판정 평균보다 20% 이상 높으면 높은 상승 이격, 30% 이상이면 과열 주의로 표시합니다.
+120일선은 중기 위치와 추세를 확인하는 데 사용합니다.
 
-```
-disparity20  = close / ma20  * 100
-disparity25  = close / ma25  * 100   ← 개별종목 판정 지표
-disparity50  = close / ma50  * 100   ← 지수/ETF 판정 지표
-disparity120 = close / ma120 * 100
-```
+**낮은 이격만으로 저평가나 재진입 기회를 판단하지 않습니다.** 이격의 감소에는
+상승 추세 속 조정과 추세 약화가 모두 포함될 수 있습니다. JSON의 기존 `zone`과
+`zone_label`은 호환성을 위해 유지하지만 화면의 추세 판정과는 다른 값입니다.
+고정 이격 기준도 매수·매도 신호가 아닙니다.
 
-- 이동평균은 `min_periods = 윈도우` 로 계산합니다. 즉 데이터가 부족한 구간은
-  **부분 평균을 만들지 않고 NaN** 으로 두어 "조용히 틀린 값"을 방지합니다.
+### 성과·벤치마크·분야 집계
 
-보조 지표: `disparity20`, `disparity25`, `disparity50`, `disparity120`,
-`change_pct`(전일 대비 등락률), 최근 1년 판정 이격도 추이.
+- 5·20·60거래일 성과는 저장된 가격 이력의 고유 거래일을 기준으로 계산합니다.
+  같은 날짜를 반복 수집한 기록은 마지막 값으로 정리합니다. 장중 값이 포함될 수 있습니다.
+- 성과는 **현지 통화의 제공처 가격 기준**입니다. 해외 데이터는 `auto_adjust=True`로
+  받아 분할·배당 보정이 포함될 수 있습니다. 원화 환산이나 별도 현금배당 총수익률을
+  계산하지 않으며 실제 체결가·계좌 수익률과 다를 수 있습니다.
+- 시장 대비 20거래일 성과는 **종목과 정확히 같은 시작일·종료일**의 지수 성과를
+  뺀 차이(%p)입니다. 한국 상장은 코스피, 미국 상장은 S&P500, 일본 상장은 닛케이225,
+  대만 상장은 가권지수를 사용합니다. ADR도 상장시장으로 비교합니다. 날짜가 맞지
+  않거나 유럽·홍콩처럼 비교 지수가 없는 경우 `—`로 표시합니다.
+- 분야 성과는 유효한 **개별 주식**의 수익률 중앙값입니다. ETF·지수는 분야 집계에서
+  제외합니다. 시가총액 가중 지수나 산업 성장률이 아닙니다. 각 시장의 거래일과
+  통화가 달라 분야 안에서도 비교 기간이 조금씩 달라질 수 있습니다.
+- 수익률 중앙값은 해당 기간 이력이 충분한 종목, 시장 대비 중앙값은 같은 날짜로
+  지수 비교가 가능한 종목만 사용합니다. 50일선 위 비중의 분모는 유효한 50일선이
+  있는 종목입니다. 타일의 `유효/전체` 종목 수와 실제 계산에 사용한 분모를 구분해
+  표시합니다. 분야 상대 성과 1위 요약은 비교 가능한 종목이 3개 이상일 때 제공합니다.
+- 최근 변화는 종목의 최신 고유 거래일과 직전 거래일의 50일선 교차 또는 판정
+  이격도 120·130 경계 통과입니다. 프리장·애프터마켓 가격은 별도로 표시하며
+  이동평균·이격 계산에는 반영하지 않습니다.
 
----
+## 데이터 최신성과 제외 기준
 
-## 3. 해석 기준
+화면의 **수집 시각**, **가격 기준일**, **파일 확인 시각**은 서로 다릅니다.
+`데이터 확인` 버튼은 GitHub Pages의 저장된 JSON을 다시 읽으며 새 시세 수집을
+실행하지 않습니다. 날짜와 시각은 서울 기준으로 표시합니다.
 
-| 대상 | 판정 기준 |
-| ---- | --------- |
-| 개별종목(`*_stock`) | `disparity25` |
-| 지수/ETF/섹터 대용 지표 | `disparity50` |
+가격 기준일이 달력일로 7일 이상 지났거나 수집 오류·의심 플래그가 있는 종목,
+유효한 가격·이력이 없는 종목, 최신값과 이력의 날짜·가격이 불일치하는 종목은
+현재 요약과 분야 통계에서 제외합니다. 미래 기준일도 제외합니다. 전체 수집 시각이
+7일 이상 지났거나 확인되지 않으면 현재 판단을 보류합니다. 제외 종목과 사유를
+화면에서 펼쳐 확인할 수 있으며 저장된 과거 차트는 계속 살펴볼 수 있습니다.
 
-| 구간 코드  | 라벨     | 조건                         | 의미(예시 해석)                       |
-| ---------- | -------- | ---------------------------- | ------------------------------------- |
-| `overheat` | 과열     | `기준 이격도 >= 130`         | 추격매수 자제, 레버리지 축소 검토      |
-| `caution`  | 경계     | `120 <= 기준 이격도 < 130`   | 신규매수 속도 조절                    |
-| `normal`   | 정상     | `105 < 기준 이격도 < 120`    | 추세 유지 구간                        |
-| `cooldown` | 과열해소 | `기준 이격도 <= 105`         | 조정 후 재진입 검토 가능 구간         |
+매크로는 가격 데이터의 7일 기준을 그대로 적용하지 않고 **관측일과 발표 주기**를
+확인합니다. 관측일에서 아래 일수를 초과하면 오래된 관측치로 표시합니다.
 
-> 위 해석은 참고용 가이드일 뿐 매매 신호가 아닙니다. 경계값은
-> [`scripts/config.py`](scripts/config.py) 의 `ZONE_*_MIN` 에서 조정할 수 있습니다.
-> 특히 개별종목은 종목별 변동성·추세가 달라 같은 이격도 값이라도 과열 해석이
-> 다를 수 있습니다. 현재 고정 기준선은 시장/지수와 종목을 빠르게 비교하기 위한 참고선입니다.
+| 발표 주기 | 오래됨 경고 기준(달력일) |
+| --- | ---: |
+| 일간 | 14 |
+| 주간 | 35 |
+| 격주 | 60 |
+| 월간 | 120 |
+| 분기 | 240 |
+| 반기 | 365 |
+| 연간 | 550 |
 
-검증 플래그:
+이는 공급기관의 발표 보장이나 다음 발표일 예측이 아니라 화면의 경고 기준입니다.
+관측기간 미확인·미래 관측일·발표 주기 미확인·중단 계열도 현재 환경 해석에서
+제외합니다. 출처 페이지 갱신일은 실제 관측일과 구분하고, 전망 계열은 전망으로
+표시합니다. 숫자를 확보하지 못한 경우에는 수치를 채우지 않고 원문 링크를 제공합니다.
 
-- **suspicious(값 확인 필요)**: 기준 이격도 `< 50` 또는 `> 200` (정상범위 이탈)
-- **stale(데이터 오래됨)**: 마지막 데이터가 7일 이상 지남
-- **error(데이터 오류)**: 수집 실패, `close <= 0`, 기준 이동평균 계산 불가 등
+## 수집 소스와 범위
 
----
+| 데이터 | 소스·처리 |
+| --- | --- |
+| 국내 KRX 종목·지수 | FinanceDataReader 일봉 |
+| 국내 장중 모드 | FinanceDataReader 이력에 더 최신 날짜의 Yahoo 쿼트를 보강; 같은 날짜의 KRX 값 유지 |
+| 해외 종목·지수, 환율·금리·원자재 등 | yfinance 일봉·지연시세, 해외 가격 분할·배당 보정 가능 |
+| FRED 매크로 | FRED API의 관측값·주기 메타데이터; 키가 없거나 조회 실패 시 링크 제공 |
+| 일부 외부 매크로 | Trading Economics 등 출처 페이지; 관측기간이 확인되지 않으면 해석 보류 |
+| 산업·실적·가치 자료 | 공식 기업 IR·공시 링크와 확인 항목; 정량 실적 데이터 자동 연동은 아직 없음 |
 
-## 4. 추적 자산 목록
+이동평균은 20·25·50·120거래일이며 자료가 부족하면 부분 평균을 만들지 않습니다.
+가격 수집 범위는 국내 약 730일·해외 약 2년, 저장 이력은 최신 거래일 기준 최근
+365달력일입니다. 한 자산의 수집 실패는 오류로 기록하고 다른 자산 수집을 계속합니다.
+JSON 숫자는 유한한 수 또는 `null`로 저장합니다.
 
-[`scripts/config.py`](scripts/config.py) 의 `ASSETS` 에서 관리합니다(한 줄 추가/삭제로 변경).
+## 로컬 실행·검증
 
-**한국**
-- 지수/ETF: 코스피 `^KS11`, 코스피200 `^KS200`, 코스닥 `^KQ11`, 한국 반도체 `091160.KS`
-- SK하이닉스 `000660`, 삼성전자 `005930`, 삼성전기 `009150`, LG이노텍 `011070`
-- SK스퀘어 `402340`, 삼성물산 `028260`, 파두 `440110`
-- SOL AI반도체TOP2 PLUS — **종목코드 미확정(TODO)**. `config.py` 에서 코드 입력 후
-  `enabled: True` 로 바꾸면 활성화됩니다.
-
-**일본**
-- 지수/ETF: 닛케이225 `^N225`, 닛케이 반도체 `200A.T`
-- 무라타제작소 `6981.T`, 키옥시아 `285A.T`
-
-**대만**
-- 지수: 대만 가권지수 `^TWII`
-- TSMC ADR `TSM`, UMC `2303.TW`, 미디어텍 `2454.TW`, Alchip Technology `3661.TW`
-
-**미국**
-- 지수: S&P500 `^GSPC`, 나스닥100 `^NDX`, PHLX 반도체 `^SOX`
-- 마이크론 `MU`, 엔비디아 `NVDA`, 샌디스크 `SNDK`, 브로드컴 `AVGO`, 인텔 `INTC`, AMD `AMD`
-
-> 화면에는 티커, 국가, 섹터가 함께 표시됩니다. 정렬은 한국 → 일본 → 대만 → 미국 순서이고,
-> 같은 국가 안에서는 지수/ETF가 먼저, 개별종목이 그다음입니다.
-
----
-
-## 5. 데이터 소스
-
-| 대상            | 라이브러리 | 함수                                |
-| --------------- | ---------- | ----------------------------------- |
-| 국내 대표지수   | yfinance   | `yf.download(..., auto_adjust=True)`|
-| 국내 개별종목   | pykrx      | `stock.get_market_ohlcv`            |
-| 해외·일본·대만 지수/종목 | yfinance   | `yf.download(..., auto_adjust=True)`|
-| 국내 섹터 ETF   | yfinance   | `yf.download(..., auto_adjust=True)`|
-
-- 모든 데이터는 **일봉 종가** 기준으로 통일합니다.
-- 내부적으로는 모두 `date` 인덱스 + `close` 컬럼을 가진 표준 DataFrame 으로 변환합니다.
-- yfinance 가 MultiIndex 컬럼을 반환해도 `Close` 를 정상 추출합니다.
-- 해외 종목은 `auto_adjust=True` 로 액면분할/배당을 보정합니다(예: NVDA 분할).
-
----
-
-## 6. 로컬 실행 방법
+Python 3.11과 Node.js를 사용합니다. 저장소 루트에서 실행합니다.
 
 ```bash
-# 1) 의존성 설치
-pip install -r scripts/requirements.txt
-
-# 2) 데이터 수집 + 계산 (docs/data/*.json 생성)
+python -m pip install -r scripts/requirements.txt
 python scripts/update.py --force
-
-# 3) 정적 페이지 미리보기
-cd docs
-python -m http.server 8000
-# 브라우저에서 http://localhost:8000 접속
+python -m http.server 8000 --directory docs
 ```
 
-옵션:
+브라우저에서 `http://localhost:8000`을 열어 확인합니다. 수집 옵션은 다음과 같습니다.
 
 ```bash
-python scripts/update.py            # 오늘 이미 갱신했으면 생략
-python scripts/update.py --force    # 강제 재실행
-python scripts/update.py --asset 000660       # 특정 자산만 갱신(기존 파일에 병합)
-python scripts/update.py --run-type intraday --force   # 장중(현재가) 모드
+python scripts/update.py --run-type close --force
+python scripts/update.py --run-type intraday --force
+python scripts/update.py --asset 000660 --force
 ```
 
-**모드(run_type) 설명:**
-
-| 모드 | 데이터 | 용도 |
-| --- | --- | --- |
-| `close` (기본) | 국내 개별종목=pykrx 종가, 그 외=yfinance 종가 | 종가 기준 정식 갱신 |
-| `intraday` | 국내 개별종목=pykrx 종가 히스토리 + yfinance 최신가, 그 외=yfinance 지연시세 | 장중/스케줄에서 "지금 과열도" 확인 |
-
-- 장중 모드는 당일 진행 중인 봉의 현재가(약 15~20분 지연)를 종가 자리에 넣어 이격도를 계산합니다.
-- 국내 개별종목은 yfinance 과거 히스토리와 KRX 종가가 어긋나는 경우가 있어,
-  이동평균용 과거 데이터는 pykrx 를 우선하고 최신 행만 yfinance 로 보강합니다.
-- 국내 종목·지수는 `config.py` 의 `yf_ticker`(예: `000660.KS`, `^KS11`)로 조회합니다.
-
-테스트:
+`close`가 기본입니다. 종가 모드에서 당일 갱신 기록이 있으면 `--force` 없이 실행한
+수집은 생략됩니다. 해외는 두 모드 모두 yfinance 일봉을 사용하므로 거래 중에는
+진행 중인 봉의 값이 포함될 수 있습니다.
 
 ```bash
-pytest -q          # mock DataFrame 기반, 네트워크 불필요
+node tests/test_insights.js
+node tests/test_app.js
+python -m pytest tests -q
 ```
 
----
+Node 검증은 날짜 정합성·제외 기준·성과·추세·경계 변화와 화면 동작을,
+Python 테스트는 수집·지표·직렬화·매크로 최신성 등을 확인합니다.
 
-## 6-1. FRED API 키 설정
+FRED 수치를 사용하려면 로컬 `.env`에 `FRED_API_KEY`를 설정합니다. `.env`는 Git에서
+제외됩니다. GitHub Actions에서는 같은 이름의 저장소 Actions secret을 사용합니다.
 
-FRED로 가져올 수 있는 매크로 지표(CPI, PPI, 기준금리, M2, 10년 금리 등)는 `FRED_API_KEY`가 있으면 FRED API에서 자동 수집합니다. 키가 비어 있으면 해당 카드는 값 없이 FRED 링크 카드로 표시됩니다.
+## GitHub Pages와 자동 갱신
 
-1. [FRED API Keys](https://fredaccount.stlouisfed.org/apikeys)에 접속합니다.
-2. FRED 계정으로 로그인한 뒤 **Request API Key**를 눌러 무료 키를 발급받습니다.
-3. 저장소 루트의 `.env` 파일을 열고 아래 줄의 `=` 뒤에 키를 그대로 붙여넣습니다.
+이 저장소의 공개 주소는 [https://kwonminho1992.github.io/stock_tracker/](https://kwonminho1992.github.io/stock_tracker/)입니다.
+GitHub Pages는 `main`의 `/docs`를 배포하며 `docs/.nojekyll`로 정적 파일을 제공합니다.
+화면 수정 후 `main`에 push하면 기존 Pages 빌드·배포가 실행됩니다.
 
-```dotenv
-FRED_API_KEY=발급받은_키
-```
+[.github/workflows/update.yml](.github/workflows/update.yml)은 **UTC 월~금 매시간
+20분·50분**에 장중 모드로 데이터를 갱신합니다. 요일은 UTC 기준이므로 서울의
+월~금 전체 시간과는 다릅니다. GitHub 스케줄은 지연·누락될 수 있습니다.
+Actions의 수동 `Run workflow`에서는 `intraday` 또는 `close`를 선택할 수 있습니다.
 
-`.env`는 이미 `.gitignore`에 들어가 있어 커밋되지 않습니다. GitHub Actions 자동 갱신에서도 FRED 값을 채우려면 저장소 **Settings → Secrets and variables → Actions → New repository secret**에서 이름을 `FRED_API_KEY`로 만들고 같은 키를 넣어주세요.
+워크플로는 Python 의존성 설치·테스트·수집 후 `docs/data/latest.json`과
+`docs/data/history.json`에 변경이 있을 때 커밋·push합니다. 타임스탬프만 바뀌는
+불필요한 갱신은 피합니다. 동시 실행은 하나로 제한하고 실행 시간은 20분으로
+제한합니다. 데이터 수집과 Pages 배포의 성공 여부는 각각 Actions에서 확인합니다.
 
----
+## 주요 파일과 한계
 
-## 7. GitHub Pages 설정 방법
+- [docs/index.html](docs/index.html), [docs/styles.css](docs/styles.css): 반응형 화면
+- [docs/app.js](docs/app.js): 검색·관심종목·상세·공식 자료·매크로 표시
+- [docs/insights.js](docs/insights.js): 순수 가격 분석·추세·집계·제외 기준
+- [scripts/config.py](scripts/config.py): 자산·분류·수집 설정
+- [scripts/data_sources.py](scripts/data_sources.py), [scripts/update.py](scripts/update.py): 수집·검증·JSON 생성
+- [scripts/indicators.py](scripts/indicators.py), [scripts/validate_data.py](scripts/validate_data.py): 지표·품질 검증
 
-1. 이 폴더(`market-disparity-tracker`)를 GitHub 저장소로 push 합니다.
-2. 저장소 **Settings → Pages** 로 이동합니다.
-3. **Source: Deploy from a branch**, **Branch: `main` / `/docs`** 선택 후 저장.
-4. 잠시 후 `https://<사용자명>.github.io/<저장소명>/` 에서 대시보드가 열립니다.
-
-> `docs/.nojekyll` 파일이 있어 Jekyll 처리 없이 정적 파일이 그대로 서빙됩니다.
-
----
-
-## 8. GitHub Actions 자동 갱신
-
-[`.github/workflows/update.yml`](.github/workflows/update.yml)
-
-- **스케줄**: 매 평일 매시간 20분(UTC `20 * * * 1-5`)에 실행 → **장중(intraday) 모드**.
-  GitHub Actions 스케줄은 지연될 수 있어 정확히 매시 20분에 실행된다는 보장은 없습니다.
-- **수동 실행**: Actions 탭 → **"Run workflow"** → **run_type** 선택(`intraday` 기본 / `close`).
-  핸드폰·PC에서 눌러 그 시점 이격도를 즉시 갱신할 수 있습니다.
-- 동작 순서: 의존성 설치 → (pytest 있으면) 테스트 → `update.py --force` →
-  `docs/data/latest.json`, `docs/data/history.json` **변경 시에만** 커밋/푸시.
-- 커밋 메시지: `data: update market disparity YYYY-MM-DDTHH:mmZ`
-- push 실패 시 `git pull --rebase` 후 최대 3회 재시도.
-- `permissions: contents: write` 로 Actions 가 커밋을 push 합니다.
-
-> 데이터(타임스탬프 제외)에 실제 변화가 없으면 파일을 다시 쓰지 않으므로
-> 불필요한 커밋이 생기지 않습니다(휴장일 등).
-
----
-
-## 9. 데이터 파일 구조
-
-### `docs/data/latest.json`
-
-```jsonc
-{
-  "updated_at": "2026-06-25T20:22:52+09:00",
-  "run_type": "close",
-  "assets": [
-    {
-      "name": "SK하이닉스",
-      "code": "000660",
-      "market": "KR",
-      "asset_type": "kr_stock",
-      "source": "pykrx_stock",
-      "date": "2026-06-25",
-      "close": 2917000,
-      "ma20": 2387450,
-      "ma25": 2306800,
-      "ma50": 1878320,
-      "ma120": 1288608.33,
-      "disparity20": 122.18,
-      "disparity25": 126.45,
-      "disparity50": 155.3,
-      "disparity120": 226.37,
-      "primary_window": 25,
-      "primary_disparity": 126.45,
-      "change_pct": 13.06,
-      "zone": "caution",
-      "zone_label": "경계",
-      "is_stale": false,
-      "is_suspicious": false,
-      "warning": null
-    },
-    {
-      "name": "데이터 실패 예시",
-      "code": "ERROR",
-      "market": "KR",
-      "asset_type": "kr_stock",
-      "source": "pykrx_stock",
-      "error": "데이터 수집 실패 사유"
-    }
-  ]
-}
-```
-
-- 정상 자산은 모든 수치 필드를 가지며, 실패 자산은 `error` 필드만 가집니다.
-- 모든 숫자 필드는 **유한한 수 또는 `null`** 입니다(NaN/Infinity 없음).
-
-### `docs/data/history.json`
-
-```jsonc
-{
-  "000660": {
-    "name": "SK하이닉스",
-    "code": "000660",
-    "market": "KR",
-    "asset_type": "kr_stock",
-    "source": "pykrx_stock",
-    "primary_window": 25,
-    "data": [
-      {
-        "date": "2026-06-25",
-        "close": 2917000,
-        "ma25": 2306800,
-        "ma50": 1878320,
-        "disparity25": 126.45,
-        "disparity50": 155.3,
-        "primary_disparity": 126.45,
-        "zone": "caution"
-      }
-    ]
-  }
-}
-```
-
-- 자산 코드를 key 로 갖고, 각 값에 최근 약 1년치 판정 이격도 시계열을 담습니다.
-- 데이터가 부족하거나 실패한 자산은 history 에서 **제외**됩니다.
-
----
-
-## 10. 프로젝트 구조
-
-```
-market-disparity-tracker/
-├─ README.md
-├─ scripts/
-│  ├─ config.py          # 자산 목록 · MA 윈도우 · 구간/검증 기준
-│  ├─ data_sources.py    # pykrx / yfinance → 표준 DataFrame
-│  ├─ indicators.py      # 이동평균 · 이격도 · 구간분류 · 레코드 빌더
-│  ├─ validate_data.py   # 치명적/소프트 검증(error·suspicious·stale)
-│  ├─ update.py          # 수집→계산→검증→JSON 생성 오케스트레이션
-│  └─ requirements.txt
-├─ docs/                 # GitHub Pages 루트
-│  ├─ index.html
-│  ├─ app.js
-│  ├─ styles.css
-│  ├─ .nojekyll
-│  └─ data/
-│     ├─ latest.json
-│     └─ history.json
-├─ tests/
-│  ├─ test_indicators.py
-│  └─ test_serialization.py
-└─ .github/workflows/update.yml
-```
-
----
-
-## 11. 무료 데이터 소스의 한계
-
-- **지연/결측**: pykrx(KRX)·yfinance(Yahoo)는 비공식/무료 소스로, 일시적 차단·지연·결측·
-  컬럼 변경이 발생할 수 있습니다. 이때 해당 자산은 `error`/`stale` 로 표시됩니다.
-- **휴장일 캘린더 미반영(1차)**: 정확한 거래소 휴장일 캘린더 대신 "7일 이상 미갱신"
-  단순 기준으로 stale 을 판단합니다.
-- **해외 종가 시점 차이**: 미국장 종가는 KST 기준 다음 날 새벽에 확정되므로, 국내 종목보다
-  최대 1~3일 날짜가 뒤처질 수 있습니다(주말/휴일 포함). 7일 임계값으로 흡수합니다.
-- **수정종가 사용**: 해외 종목은 분할/배당 보정된 값이라 표시 종가가 실제 체결가와 다를 수
-  있습니다.
-
----
-
-## 12. 1차 구현 범위 / 향후 계획
-
-**구현됨**
-- 종가(close) 모드 — 수동/정식 종가 기준 갱신
-- 장중(intraday) 모드 — 국내 개별종목은 KRX 히스토리에 Yahoo 최신가 보강, 그 외는 yfinance 지연시세로 계산
-- GitHub Actions 평일 1시간 단위 스케줄 갱신
-- 데이터 출처 표기, 데스크탑/모바일 반응형
-
-**미구현 / 향후 후보**
-- 텔레그램·푸시 알림
-- 정확한 휴장일 캘린더(현재는 7일 기준 stale 판정)
-- 자산별 임계값 커스터마이즈
-- 일부 yfinance 국내 지수/종목의 결측·전일종가 불일치 감시 강화
+무료 시세에는 지연·결측·보정 차이가 있을 수 있습니다. 정확한 거래소 휴장일
+캘린더 대신 달력일 경고를 사용합니다. 주가 강약만으로 산업의 실제 병목이나
+기업 저평가를 판정하지 않으며 CAPEX·공급능력·수주·이익·현금흐름은 연결된
+공식 원문에서 확인해야 합니다. 이 도구는 정보 확인과 비교를 돕기 위한 것이며
+투자 판단은 이용자가 수행합니다.

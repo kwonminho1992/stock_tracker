@@ -19,7 +19,7 @@ ZONE_OVERHEAT_MIN: float = 130.0
 ZONE_CAUTION_MIN: float = 120.0
 ZONE_NORMAL_MIN: float = 105.0
 ZONE_LABELS: Dict[str, str] = {
-    "overheat": "과열", "caution": "경계", "normal": "정상", "cooldown": "과열해소",
+    "overheat": "과열", "caution": "경계", "normal": "정상", "cooldown": "낮은 이격",
 }
 
 SUSPICIOUS_DISPARITY_MIN: float = 50.0
@@ -362,85 +362,86 @@ ASSETS: List[Dict] = [
 # ---------------------------------------------------------------------------
 # FRED 매크로 지표 — API 키가 있으면 값(mode=yoy: 전년동월대비 %, level: 현재 수준)을
 # 채우고, 없거나 실패하면 링크 전용 카드로 대체된다.
-#   fields: name, series_id, group, unit, mode, desc, url, country_label, target(선택)
+#   fields: name, series_id, group, unit, mode, frequency, desc, url, country_label, target(선택)
+# frequency는 metadata 조회 실패 시 사용할 공식 계열 빈도이며
+# 최신성 경고는 관측일 기준 monthly 120일 / quarterly 240일 / annual 550일이다.
 # series_id 는 널리 쓰이는 값이나, 키 넣고 첫 실행 후 오차 있으면 조정.
 # ---------------------------------------------------------------------------
 FRED_MACROS: List[Dict] = [
     # 장기금리(월간, OECD)
-    {"name": "한국 10년 금리", "series_id": "IRLTLT01KRM156N", "group": "rates", "unit": "%", "mode": "level",
+    {"name": "한국 10년 금리", "series_id": "IRLTLT01KRM156N", "group": "rates", "unit": "%", "mode": "level", "frequency": "monthly",
      "country_label": "한국", "sort_order": 9020,
      "desc": "국내 장기금리(월간). 상승=성장주 할인율 부담·부동산 PF 부담, 미국 금리와의 격차 확대는 원화 약세 압력",
      "url": "https://fred.stlouisfed.org/series/IRLTLT01KRM156N"},
-    {"name": "일본 10년 금리", "series_id": "IRLTLT01JPM156N", "group": "rates", "unit": "%", "mode": "level",
+    {"name": "일본 10년 금리", "series_id": "IRLTLT01JPM156N", "group": "rates", "unit": "%", "mode": "level", "frequency": "monthly",
      "country_label": "일본", "sort_order": 9021,
      "desc": "BOJ 긴축 정도의 척도(월간). 급등=엔캐리 청산 위험→글로벌 기술주 변동성 확대 트리거 가능",
      "url": "https://fred.stlouisfed.org/series/IRLTLT01JPM156N"},
 
     # 기준금리/정책금리
-    {"name": "美 기준금리", "series_id": "FEDFUNDS", "group": "policy", "unit": "%", "mode": "level",
+    {"name": "美 기준금리", "series_id": "FEDFUNDS", "group": "policy", "unit": "%", "mode": "level", "frequency": "monthly",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9040,
      "desc": "글로벌 유동성의 수도꼭지. 인하 사이클=위험자산·성장주 순풍, 동결 장기화=밸류에이션 상단 제한. "
              "(목표 표시는 Fed 물가목표 2%)",
      "url": "https://fred.stlouisfed.org/series/FEDFUNDS"},
-    {"name": "한국 기준금리", "series_id": "INTDSRKRM193N", "group": "policy", "unit": "%", "mode": "level",
-     "country_label": "한국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9041,
-     "desc": "국내 유동성·환율 방어의 균형점. 미국보다 과도하게 낮으면 원화 약세·자금이탈 압력. "
-             "(목표 표시는 한은 물가목표 2%)",
+    {"name": "한국 할인율(IMF)", "series_id": "INTDSRKRM193N", "group": "policy", "unit": "%", "mode": "level", "frequency": "monthly",
+     "country_label": "한국", "sort_order": 9041,
+     "desc": "IMF의 한국 할인율 계열(월간). 한국은행 기준금리와 다른 계열이므로 현재 정책금리로 해석하지 않음",
      "url": "https://fred.stlouisfed.org/series/INTDSRKRM193N"},
-    {"name": "일본 정책금리", "series_id": "IRSTCB01JPM156N", "group": "policy", "unit": "%", "mode": "level",
+    {"name": "일본 정책금리", "series_id": "IRSTCB01JPM156N", "group": "policy", "unit": "%", "mode": "level", "frequency": "monthly",
      "country_label": "일본", "target": "2.0%", "target_label": "물가목표", "sort_order": 9042,
      "desc": "인상=엔 강세→엔캐리 청산 압력(글로벌 기술주에 단기 충격 이력). "
              "동결·완화 유지=위험자산에 우호. (목표 표시는 BOJ 물가목표 2%)",
      "url": "https://fred.stlouisfed.org/series/IRSTCB01JPM156N"},
 
     # 물가(CPI) — 전년동월대비 %
-    {"name": "美 CPI", "series_id": "CPIAUCSL", "group": "cpi", "unit": "%", "mode": "yoy",
+    {"name": "美 CPI", "series_id": "CPIAUCSL", "group": "cpi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9060,
      "desc": "연준 금리 경로를 결정하는 1순위 지표(전년동월비). 2%대 안착=금리인하 여지→성장주 순풍, "
              "재반등=인하 지연→밸류에이션 부담",
      "url": "https://fred.stlouisfed.org/series/CPIAUCSL"},
-    {"name": "美 근원 CPI", "series_id": "CPILFESL", "group": "cpi", "unit": "%", "mode": "yoy",
+    {"name": "美 근원 CPI", "series_id": "CPILFESL", "group": "cpi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "미국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9061,
      "desc": "식품·에너지 제외 추세 물가(전년동월비). 헤드라인보다 끈적해 연준이 더 중시 — "
              "이게 안 내려오면 금리인하 기대는 밀린다",
      "url": "https://fred.stlouisfed.org/series/CPILFESL"},
-    {"name": "한국 CPI", "series_id": "KORCPIALLMINMEI", "group": "cpi", "unit": "%", "mode": "yoy",
+    {"name": "한국 CPI", "series_id": "KORCPIALLMINMEI", "group": "cpi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "한국", "target": "2.0%", "target_label": "물가목표", "sort_order": 9062,
      "desc": "한은 금리인하 여력의 전제조건(전년동월비). 2% 안착=완화 여지, "
              "환율발 수입물가 재상승 여부가 관건",
      "url": "https://fred.stlouisfed.org/series/KORCPIALLMINMEI"},
-    {"name": "일본 CPI", "series_id": "FPCPITOTLZGJPN", "group": "cpi", "unit": "%", "mode": "level",
+    {"name": "일본 CPI", "series_id": "FPCPITOTLZGJPN", "group": "cpi", "unit": "%", "mode": "level", "frequency": "annual",
      "country_label": "일본", "target": "2.0%", "target_label": "물가목표", "sort_order": 9063,
      "desc": "2% 위 정착 여부가 BOJ 추가 긴축(→엔캐리 청산 리스크)의 방아쇠. 연간 계열이라 속보성은 낮음",
      "url": "https://fred.stlouisfed.org/series/FPCPITOTLZGJPN"},
-    {"name": "대만 CPI", "series_id": "TWNPCPIPCPPPT", "group": "cpi", "unit": "%", "mode": "level",
+    {"name": "대만 CPI 전망(연간)", "series_id": "TWNPCPIPCPPPT", "group": "cpi", "unit": "%", "mode": "level", "frequency": "annual", "is_projection": True,
      "country_label": "대만", "target": "~2%", "target_label": "물가목표", "sort_order": 9064,
-     "desc": "TSMC 밸류체인이 있는 대만의 물가 안정도. 급등 시 대만달러·가권지수 변동성 확대 참고(연간 계열)",
+     "desc": "IMF 연간 REO 물가 계열. 당해·미래연도는 전망치이므로 월간 CPI 실측치와 구분해 참고",
      "url": "https://fred.stlouisfed.org/series/TWNPCPIPCPPPT"},
 
     # 생산자물가(PPI)
-    {"name": "美 PPI", "series_id": "PPIACO", "group": "ppi", "unit": "%", "mode": "yoy",
+    {"name": "美 PPI", "series_id": "PPIACO", "group": "ppi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "미국", "sort_order": 9080,
      "desc": "기업 단계 물가(전년동월비) — CPI에 수개월 선행하는 경향. "
              "반등 시 소비자물가 재상승→금리인하 지연 신호로 선제 해석",
      "url": "https://fred.stlouisfed.org/series/PPIACO"},
-    {"name": "한국 PPI", "series_id": "KORPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
+    {"name": "한국 PPI", "series_id": "KORPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "한국", "sort_order": 9081,
      "desc": "국내 제조업 출하물가(전년동월비). 반도체 판가 사이클과 부분 연동 — "
              "상승 전환은 제조업 마진 회복 신호이기도(발표 지연 있음)",
      "url": "https://fred.stlouisfed.org/series/KORPPDMMINMEI"},
-    {"name": "일본 PPI", "series_id": "JPNPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy",
+    {"name": "일본 PPI", "series_id": "JPNPPDMMINMEI", "group": "ppi", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "일본", "sort_order": 9082,
      "desc": "일본 제조업 출하물가(전년동월비). 엔 약세→수입물가→PPI 경로 확인용(발표 지연 있음)",
      "url": "https://fred.stlouisfed.org/series/JPNPPDMMINMEI"},
 
     # 통화량(M2)
-    {"name": "美 M2 통화량", "series_id": "M2SL", "group": "money", "unit": "%", "mode": "yoy",
+    {"name": "美 M2 통화량", "series_id": "M2SL", "group": "money", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "미국", "sort_order": 9100,
      "desc": "글로벌 자산가격의 큰 물줄기(전년동월비). 증가율 확대=유동성 장세 지속, "
              "위축 전환=밸류에이션 되돌림 압력의 배경",
      "url": "https://fred.stlouisfed.org/series/M2SL"},
-    {"name": "한국 M2 통화량", "series_id": "MYAGM2KRM189S", "group": "money", "unit": "%", "mode": "yoy",
+    {"name": "한국 M2 통화량", "series_id": "MYAGM2KRM189S", "group": "money", "unit": "%", "mode": "yoy", "frequency": "monthly",
      "country_label": "한국", "sort_order": 9101,
      "desc": "국내 유동성 총량(전년동월비). 코스피 유동성 장세의 연료 게이지 — "
              "확대기에 지수 멀티플이 함께 늘어나는 경향",
@@ -454,16 +455,16 @@ FRED_MACROS: List[Dict] = [
 LINK_MACROS: List[Dict] = [
     # FRED에서 안정적인 자동수집 계열을 찾기 어려운 항목
     {"name": "대만 기준금리", "group": "policy", "country_label": "대만", "sort_order": 9043, "note": "TE",
-     "unit": "%", "target": "~2%", "target_label": "물가목표", "parser": "te_last_recorded_percent",
+     "unit": "%", "target": "~2%", "target_label": "물가목표", "parser": "te_last_recorded_percent", "frequency": "quarterly",
      "desc": "대만중앙은행(CBC) 정책금리. TSMC 밸류체인 자금환경·대만달러 방향의 배경 변수",
      "url": "https://tradingeconomics.com/taiwan/interest-rate"},
     {"name": "대만 PPI", "group": "ppi", "country_label": "대만", "sort_order": 9083, "note": "TE",
-     "unit": "%", "parser": "te_ppi_change_percent",
+     "unit": "%", "parser": "te_ppi_change_percent", "frequency": "monthly",
      "desc": "대만 제조업 출하물가(전년동월비). 파운드리·전자 밸류체인의 판가·비용 환경 참고",
      "url": "https://tradingeconomics.com/taiwan/producer-prices-change"},
     # 통화량(일본)
     {"name": "일본 M2 통화량", "group": "money", "country_label": "일본", "sort_order": 9102, "note": "TE",
-     "unit": "JPY bn", "parser": "te_money_level",
+     "unit": "JPY bn", "parser": "te_money_level", "frequency": "monthly",
      "desc": "엔 유동성 총량. BOJ 긴축으로 위축되면 엔캐리 자금 환류→글로벌 위험자산에 역풍 가능",
      "url": "https://tradingeconomics.com/japan/money-supply-m2"},
     # 위험자산·심리
